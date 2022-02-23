@@ -1,7 +1,7 @@
 from theseus.registry import Registry
 from torch.utils.data import DataLoader, Dataset
 from .dataloader import DataLoaderWithCollator
-from .dataset import ChainDataset, ConcatDataset
+from .dataset import ChainDataset, ConcatDataset, ImageDataset
 
 DATASET_REGISTRY = Registry('DATASET')
 DATASET_REGISTRY.register(Dataset)
