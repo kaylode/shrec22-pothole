@@ -7,6 +7,7 @@ from theseus.opt import Opts
 import os
 import cv2
 import torch
+import numpy as np
 from datetime import datetime
 from theseus.opt import Config
 from theseus.segmentation.models import MODEL_REGISTRY
@@ -119,7 +120,7 @@ class TestPipeline(object):
 
             for (input, pred, filename, ori_size) in zip(inputs, preds, img_names, ori_sizes):
                 decode_pred = visualizer.decode_segmap(pred)[:,:,::-1]
-                resized_decode_mask = cv2.resize(decode_pred, ori_size)
+                resized_decode_mask = cv2.resize(decode_pred, dsize=tuple(ori_size))
 
                 # Save mask
                 savepath = os.path.join(saved_mask_dir, filename)
@@ -127,8 +128,9 @@ class TestPipeline(object):
 
                 # Save overlay
                 raw_image = visualizer.denormalize(input)   
-                ori_image = cv2.resize(raw_image, ori_size)
-                overlay = ori_image * 0.7 + resized_decode_mask * 0.3
+                raw_image = (raw_image*255).astype(np.uint8)
+                ori_image = cv2.resize(raw_image, dsize=tuple(ori_size))
+                overlay = ori_image * 0.75 + resized_decode_mask * 0.25
                 savepath = os.path.join(saved_overlay_dir, filename)
                 cv2.imwrite(savepath, overlay)
 

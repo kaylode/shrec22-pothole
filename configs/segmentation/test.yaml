@@ -13,7 +13,7 @@ model:
 
 data: 
   dataset:
-    name: TestDataset
+    name: TestCSVDataset
     args:
       image_dir: data/images
       txt_classnames: configs/sample/classes.txt
