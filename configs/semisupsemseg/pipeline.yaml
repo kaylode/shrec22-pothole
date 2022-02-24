@@ -1,6 +1,6 @@
 global:
   debug: true
-  cfg_transform: configs/segmentation/transform.yaml
+  cfg_transform: configs/semisupsemseg/transform.yaml
   save_dir: /content/main/runs
   device: cuda:0
   use_fp16: true
@@ -28,10 +28,11 @@ model2:
     name: unetplusplus
     encoder_name: efficientnet-b0
 sup_loss:
-  name: CELoss
-  args: {}
-unsup_loss:
   name: OhemCELoss
+  args: 
+    weight: [0.5, 1.0, 1.0]
+unsup_loss:
+  name: CELoss
   args: {}
 metrics:
 - name: PixelAccuracy
@@ -65,7 +66,7 @@ data:
         mask_dir: /content/main/data/shrec22-pothole/pothole-mix/training
         csv_path: /content/main/data/train.csv
         txt_classnames: configs/segmentation/classes.txt
-        mosaic_size: 960 
+        mosaic_size: 640 
         mosaic_prob: 0.4
     unsup_train1:
       name: ImageDataset
