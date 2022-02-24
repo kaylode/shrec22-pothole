@@ -225,7 +225,8 @@ class Pipeline(object):
         self.logger.subscribe(writer)
 
         self.logger.text("Evaluating...", level=LoggerObserver.INFO)
-        self.trainer.evaluate_epoch()
+        self.trainer.evaluate_epoch(model_id=1)
+        self.trainer.evaluate_epoch(model_id=2)
    
 
   

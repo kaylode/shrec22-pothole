@@ -81,6 +81,8 @@ class ModelWithLoss(nn.Module):
             logits_cons_stu_1, {'targets': ps_label_2}, self.device)
         cps_loss2, _ = self.criterion_unsup(
             logits_cons_stu_2, {'targets': ps_label_1}, self.device)
+        cps_loss1 = self.weights[1] * cps_loss1
+        cps_loss2 = self.weights[1] * cps_loss2
         cps_loss = cps_loss1 + cps_loss2
 
         # Supervised loss
@@ -89,10 +91,12 @@ class ModelWithLoss(nn.Module):
 
         sup_loss1, _ = self.criterion_sup(sup_pred_1, sup_batch, self.device)
         sup_loss2, _ = self.criterion_sup(sup_pred_2, sup_batch, self.device)
+        sup_loss1 = self.weights[0] * sup_loss1
+        sup_loss2 = self.weights[0] * sup_loss2
         sup_loss = sup_loss1 + sup_loss2
 
         # Total loss
-        loss = self.weights[0] * sup_loss + self.weights[1] * cps_loss
+        loss = sup_loss + cps_loss
         loss_dict = {
             'SUP1': sup_loss1.item(),
             'SUP2': sup_loss2.item(),

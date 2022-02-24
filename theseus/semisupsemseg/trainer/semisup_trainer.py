@@ -314,7 +314,7 @@ class SemiSupervisedTrainer(object):
         LOGGER.log(log_dict)
 
         # Hook function
-        self.check_best(metric_dict)
+        self.check_best(metric_dict, model_id)
 
     def check_best(self, metric_dict, model_id):
         return 
