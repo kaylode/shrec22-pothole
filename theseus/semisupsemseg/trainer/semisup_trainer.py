@@ -95,7 +95,8 @@ class SemiSupervisedTrainer(object):
                 # Start evaluation
                 if self.evaluate_per_epoch != 0:
                     if epoch % self.evaluate_per_epoch == 0 and epoch+1 >= self.evaluate_per_epoch:
-                        self.evaluate_epoch()
+                        self.evaluate_epoch(model_id=1)
+                        self.evaluate_epoch(model_id=2)
                     self.on_evaluate_end()
                 
                 # On epoch end callbacks
@@ -117,12 +118,6 @@ class SemiSupervisedTrainer(object):
     def visualize_batch(self):
         raise NotImplementedError
 
-    def training_epoch(self):
-        raise NotImplementedError
-    
-    def evaluate_epoch(self):
-        raise NotImplementedError
-    
     def on_start(self):
         return
 
@@ -248,7 +243,7 @@ class SemiSupervisedTrainer(object):
                 self.save_checkpoint()
 
     @torch.no_grad()   
-    def evaluate_epoch(self):
+    def evaluate_epoch(self, model_id=1):
         """
         Perform validation one epoch
         """
@@ -263,7 +258,7 @@ class SemiSupervisedTrainer(object):
         # Gradient scaler
         with amp.autocast(enabled=self.use_amp):
             for batch in tqdm(self.valloader):
-                outputs = self.model.evaluate_step(batch, self.metrics)
+                outputs = self.model.evaluate_step(batch, self.metrics, model_id=model_id)
                 
                 loss_dict = outputs['loss_dict']
                 for (key,value) in loss_dict.items():
@@ -321,5 +316,5 @@ class SemiSupervisedTrainer(object):
         # Hook function
         self.check_best(metric_dict)
 
-    def check_best(self, metric_dict):
+    def check_best(self, metric_dict, model_id):
         return 

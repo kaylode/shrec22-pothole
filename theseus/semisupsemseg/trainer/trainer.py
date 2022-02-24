@@ -18,21 +18,21 @@ class S4Trainer(SemiSupervisedTrainer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def check_best(self, metric_dict):
+    def check_best(self, metric_dict, model_id):
         """
         Hook function, called after metrics are calculated
         """
         if metric_dict['dice'] > self.best_value:
             if self.iters > 0: # Have been training, else in evaluation-only mode or just sanity check
                 LOGGER.text(
-                    f"Evaluation improved from {self.best_value} to {metric_dict['dice']}",
+                    f"Evaluation model{model_id} improved from {self.best_value} to {metric_dict['dice']}",
                     level=LoggerObserver.INFO)
                 self.best_value = metric_dict['dice']
-                self.save_checkpoint('best')
+                self.save_checkpoint(f'best{model_id}')
             
             else:
                 if self.visualize_when_val:
-                    self.visualize_pred()
+                    self.visualize_pred(model_id=model_id)
 
     def save_checkpoint(self, outname='last'):
         """
@@ -98,7 +98,7 @@ class S4Trainer(SemiSupervisedTrainer):
         plt.tight_layout(pad=0)
 
         LOGGER.log([{
-            'tag': "Sanitycheck/batch/train",
+            'tag': "Sanitycheck/batch/sup_train",
             'value': fig,
             'type': LoggerObserver.FIGURE,
             'kwargs': {
@@ -159,7 +159,7 @@ class S4Trainer(SemiSupervisedTrainer):
         plt.imshow(grid_img)
 
         LOGGER.log([{
-            'tag': "Sanitycheck/batch/train",
+            'tag': "Sanitycheck/batch/upsup_train",
             'value': fig,
             'type': LoggerObserver.FIGURE,
             'kwargs': {
@@ -217,7 +217,7 @@ class S4Trainer(SemiSupervisedTrainer):
         plt.tight_layout(pad=0)
 
         LOGGER.log([{
-            'tag': "Validation/prediction",
+            'tag': f"Validation/prediction{model_id}",
             'value': fig,
             'type': LoggerObserver.FIGURE,
             'kwargs': {
@@ -287,5 +287,6 @@ class S4Trainer(SemiSupervisedTrainer):
         self.visualize_model()
         self.visualize_sup_gt()
         self.visualize_unsup_gt()
-        self.evaluate_epoch()
+        self.evaluate_epoch(model_id=1)
+        self.evaluate_epoch(model_id=2)
         self.analyze_gt()

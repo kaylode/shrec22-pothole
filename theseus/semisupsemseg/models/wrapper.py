@@ -28,8 +28,12 @@ class ModelWithLoss(nn.Module):
         self.device = device
         self.weights = weights
 
-    def forward(self, batch, metrics=None):
-        outputs = self.model1(batch["inputs"].to(self.device))
+    def forward(self, batch, metrics=None, model_id=1):
+        if model_id == 1:
+            outputs = self.model1(batch["inputs"].to(self.device))
+        else:
+            outputs = self.model2(batch["inputs"].to(self.device))
+            
         loss, loss_dict = self.criterion_sup(outputs, batch, self.device)
 
         if metrics is not None:
@@ -102,8 +106,8 @@ class ModelWithLoss(nn.Module):
             'loss_dict': loss_dict
         }
 
-    def evaluate_step(self, batch, metrics=None):
-        return self.forward(batch, metrics)
+    def evaluate_step(self, batch, metrics=None, model_id=1):
+        return self.forward(batch, metrics, model_id=model_id)
 
     def state_dict(self):
         return self.model1.state_dict()
