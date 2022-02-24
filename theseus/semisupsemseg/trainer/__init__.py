@@ -1,4 +1,4 @@
-from theseus.base.trainer import TRAINER_REGISTRY 
+from theseus.segmentation.trainer import TRAINER_REGISTRY 
 
 from .trainer import S4Trainer
 
