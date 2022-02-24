@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from typing import List
+from typing import List, Dict, Any
 
 class ModelWithLoss(nn.Module):
     """Add utilitarian functions for module to work with pipeline
@@ -27,18 +27,19 @@ class ModelWithLoss(nn.Module):
         self.criterion_unsup = criterion_unsup
         self.device = device
         self.weights = weights
+        self.num_classes = self.model1.num_classes
 
-    def forward(self, batch, metrics=None, model_id=1):
-        if model_id == 1:
-            outputs = self.model1(batch["inputs"].to(self.device))
-        else:
-            outputs = self.model2(batch["inputs"].to(self.device))
+    def forward(self, batch, metrics=None):
+        inputs = batch["inputs"].to(self.device)
+        outputs1 = self.model1(inputs)
+        outputs2 = self.model2(inputs)
+        probs = self.ensemble_learning(outputs1, outputs2)
             
-        loss, loss_dict = self.criterion_sup(outputs, batch, self.device)
+        loss, loss_dict = self.criterion_sup(probs, batch, self.device)
 
         if metrics is not None:
             for metric in metrics:
-                metric.update(outputs, batch)
+                metric.update(probs, batch)
 
         return {
             'loss': loss,
@@ -72,15 +73,23 @@ class ModelWithLoss(nn.Module):
         _, ps_label_2 = torch.max(logits_cons_tea_2, dim=1)
         ps_label_2 = ps_label_2.long()
 
+        ## One-hot encoding
+        one_hot_ps_label_1 = torch.nn.functional.one_hot(
+              ps_label_1, 
+              num_classes=self.num_classes).permute(0, 3, 1, 2)
+        one_hot_ps_label_2 = torch.nn.functional.one_hot(
+              ps_label_2, 
+              num_classes=self.num_classes).permute(0, 3, 1, 2)
+
         ## Get student#1 prediction for mixed image
         logits_cons_stu_1 = self.model1(unsup_imgs_mixed)
         ## Get student#2 prediction for mixed image
         logits_cons_stu_2 = self.model2(unsup_imgs_mixed)
 
         cps_loss1, _ = self.criterion_unsup(
-            logits_cons_stu_1, {'targets': ps_label_2}, self.device)
+            logits_cons_stu_1, {'targets': one_hot_ps_label_2}, self.device)
         cps_loss2, _ = self.criterion_unsup(
-            logits_cons_stu_2, {'targets': ps_label_1}, self.device)
+            logits_cons_stu_2, {'targets': one_hot_ps_label_1}, self.device)
         cps_loss1 = self.weights[1] * cps_loss1
         cps_loss2 = self.weights[1] * cps_loss2
         cps_loss = cps_loss1 + cps_loss2
@@ -110,11 +119,34 @@ class ModelWithLoss(nn.Module):
             'loss_dict': loss_dict
         }
 
-    def evaluate_step(self, batch, metrics=None, model_id=1):
-        return self.forward(batch, metrics, model_id=model_id)
+    def evaluate_step(self, batch, metrics=None):
+        return self.forward(batch, metrics)
 
     def state_dict(self):
         return self.model1.state_dict()
 
     def trainable_parameters(self):
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
+
+    def get_model(self):
+        return self
+
+    def ensemble_learning(self, logit1, logit2):
+        prob1 = torch.softmax(self.model1(logit1), dim=1)
+        prob2 = torch.softmax(self.model2(logit2), dim=1)
+        output = torch.stack([prob1, prob2], dim=0) # [2, B, C, H, W]
+        return output.sum(dim=0) #[B, C, H, W]
+
+    @torch.no_grad()
+    def get_prediction(self, adict: Dict[str, Any], device: torch.device):
+        inputs = adict['inputs'].to(device)
+        outputs1 = torch.softmax(self.model1(inputs), dim=1)
+        outputs2 = torch.softmax(self.model2(inputs), dim=1)
+
+        probs = self.ensemble_learning(outputs1, outputs2)
+        predict = torch.argmax(probs, dim=1)
+
+        predict = predict.detach().cpu().squeeze().numpy()
+        return {
+            'masks': predict
+        } 
