@@ -63,12 +63,14 @@ class DiceScore(Metric):
         
 
     def binary_compute(self, predict: torch.Tensor, target: torch.Tensor):
-        # outputs: (batch, 1, W, H)
-        # targets: (batch, 1, W, H)
+        # outputs: (batch, W, H)
+        # targets: (batch, W, H)
 
-        intersect = (predict * target).sum((-2,-1))
-        union = (predict + target).sum((-2,-1))
-        return (2. * intersect + self.eps) / (union +self.eps)
+        intersect = torch.sum(target*predict, dim=(-1, -2))
+        A = torch.sum(target, dim=(-1, -2))
+        B = torch.sum(predict, dim=(-1, -2))
+        union = A + B
+        return (2. * intersect)  / (union +self.eps)
         
     def reset(self):
         self.scores_list = np.zeros(self.num_classes)
