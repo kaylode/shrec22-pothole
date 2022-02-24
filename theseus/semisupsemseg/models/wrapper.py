@@ -18,7 +18,7 @@ class ModelWithLoss(nn.Module):
         criterion_sup: nn.Module, 
         criterion_unsup: nn.Module, 
         device: torch.device,
-        weights: List[float] = [1.0, 5.0]):
+        weights: List[float] = [1.0, 1.5]):
 
         super().__init__()
         self.model1 = model1
@@ -87,9 +87,9 @@ class ModelWithLoss(nn.Module):
         logits_cons_stu_2 = self.model2(unsup_imgs_mixed)
 
         cps_loss1, _ = self.criterion_unsup(
-            logits_cons_stu_1, {'targets': one_hot_ps_label_2}, self.device)
+            logits_cons_stu_1, {'targets': one_hot_ps_label_2.float()}, self.device)
         cps_loss2, _ = self.criterion_unsup(
-            logits_cons_stu_2, {'targets': one_hot_ps_label_1}, self.device)
+            logits_cons_stu_2, {'targets': one_hot_ps_label_1.float()}, self.device)
         cps_loss1 = self.weights[1] * cps_loss1
         cps_loss2 = self.weights[1] * cps_loss2
         cps_loss = cps_loss1 + cps_loss2
@@ -132,16 +132,17 @@ class ModelWithLoss(nn.Module):
         return self
 
     def ensemble_learning(self, logit1, logit2):
-        prob1 = torch.softmax(self.model1(logit1), dim=1)
-        prob2 = torch.softmax(self.model2(logit2), dim=1)
+        prob1 = torch.softmax(logit1, dim=1)
+        prob2 = torch.softmax(logit2, dim=1)
+
         output = torch.stack([prob1, prob2], dim=0) # [2, B, C, H, W]
         return output.sum(dim=0) #[B, C, H, W]
 
     @torch.no_grad()
     def get_prediction(self, adict: Dict[str, Any], device: torch.device):
         inputs = adict['inputs'].to(device)
-        outputs1 = torch.softmax(self.model1(inputs), dim=1)
-        outputs2 = torch.softmax(self.model2(inputs), dim=1)
+        outputs1 = self.model1(inputs)
+        outputs2 = self.model2(inputs)
 
         probs = self.ensemble_learning(outputs1, outputs2)
         predict = torch.argmax(probs, dim=1)

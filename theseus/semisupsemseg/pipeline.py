@@ -63,13 +63,13 @@ class Pipeline(object):
         self.unsup_train_dataset1 = get_instance_recursively(
             opt['data']["dataset"]['unsup_train1'],
             registry=DATASET_REGISTRY,
-            transform=self.transform['train'],
+            transform=self.transform['val'],
         )
 
         self.unsup_train_dataset2 = get_instance_recursively(
             opt['data']["dataset"]['unsup_train2'],
             registry=DATASET_REGISTRY,
-            transform=self.transform['train'],
+            transform=self.transform['val'],
         )
 
         self.val_dataset = get_instance_recursively(
