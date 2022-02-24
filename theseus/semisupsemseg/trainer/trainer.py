@@ -18,21 +18,21 @@ class S4Trainer(SemiSupervisedTrainer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def check_best(self, metric_dict, model_id):
+    def check_best(self, metric_dict):
         """
         Hook function, called after metrics are calculated
         """
         if metric_dict['dice'] > self.best_value:
             if self.iters > 0: # Have been training, else in evaluation-only mode or just sanity check
                 LOGGER.text(
-                    f"Evaluation model{model_id} improved from {self.best_value} to {metric_dict['dice']}",
+                    f"Evaluation model improved from {self.best_value} to {metric_dict['dice']}",
                     level=LoggerObserver.INFO)
                 self.best_value = metric_dict['dice']
-                self.save_checkpoint(f'best{model_id}')
+                self.save_checkpoint(f'best')
             
             else:
                 if self.visualize_when_val:
-                    self.visualize_pred(model_id=model_id)
+                    self.visualize_pred()
 
     def save_checkpoint(self, outname='last'):
         """
@@ -146,6 +146,7 @@ class S4Trainer(SemiSupervisedTrainer):
         visualizer = Visualizer()
         batch = next(iter(self.unsuptrainloader1))
         images = batch["inputs"]
+        cutmix_masks = batch["cutmix_masks"]
 
         batch = []
         for idx, inputs in enumerate(images):
@@ -167,14 +168,39 @@ class S4Trainer(SemiSupervisedTrainer):
             }
         }])
 
+        ## Visualize CutMix
+        batch2 = next(iter(self.unsuptrainloader2))
+        images2 = batch2["inputs"]
+        unsup_imgs_mixed = images * (1 - cutmix_masks) + images2 * cutmix_masks
+
+        batch = []
+        for idx, inputs in enumerate(unsup_imgs_mixed):
+            img_show = visualizer.denormalize(inputs)
+            img_show = TFF.to_tensor(img_show)
+            batch.append(img_show)
+        grid_img = visualizer.make_grid(batch)
+
+        fig = plt.figure(figsize=(16,8))
+        plt.axis('off')
+        plt.imshow(grid_img)
+
+        LOGGER.log([{
+            'tag': "Sanitycheck/batch/cutmix_upsup_train",
+            'value': fig,
+            'type': LoggerObserver.FIGURE,
+            'kwargs': {
+                'step': self.iters
+            }
+        }])
+
     @torch.no_grad()
-    def visualize_pred(self, model_id = 1):
+    def visualize_sup_pred(self):
         r"""Visualize model prediction 
         
         """
         
         # Vizualize model predictions
-        LOGGER.text("Visualizing model predictions...", level=LoggerObserver.DEBUG)
+        LOGGER.text("Visualizing model supervised predictions...", level=LoggerObserver.DEBUG)
 
         visualizer = Visualizer()
 
@@ -184,12 +210,8 @@ class S4Trainer(SemiSupervisedTrainer):
         images = batch["inputs"]
         masks = batch['targets'].squeeze()
 
-        if model_id == 1:
-            preds = self.model.model1.get_prediction(
-                {'inputs': images}, self.model.device)['masks']
-        else:
-            preds = self.model.model2.get_prediction(
-                {'inputs': images}, self.model.device)['masks']
+        preds = self.model.get_prediction(
+            {'inputs': images}, self.model.device)['masks']
 
         batch = []
         for idx, (inputs, mask, pred) in enumerate(zip(images, masks, preds)):
@@ -217,7 +239,58 @@ class S4Trainer(SemiSupervisedTrainer):
         plt.tight_layout(pad=0)
 
         LOGGER.log([{
-            'tag': f"Validation/prediction{model_id}",
+            'tag': f"Validation/sup_prediction",
+            'value': fig,
+            'type': LoggerObserver.FIGURE,
+            'kwargs': {
+                'step': self.iters
+            }
+        }])
+
+    @torch.no_grad()
+    def visualize_unsup_pred(self):
+        r"""Visualize model prediction 
+        
+        """
+        
+        # Vizualize model predictions
+        LOGGER.text("Visualizing model unsupervised predictions...", level=LoggerObserver.DEBUG)
+
+        visualizer = Visualizer()
+
+        self.model.eval()
+
+        batch = next(iter(self.unsuptrainloader1))
+        images = batch["inputs"]
+
+        preds = self.model.get_prediction(
+            {'inputs': images}, self.model.device)['masks']
+        
+        batch = []
+        for idx, (inputs, pred) in enumerate(zip(images, preds)):
+            img_show = visualizer.denormalize(inputs)
+            decode_pred = visualizer.decode_segmap(pred)
+            img_cam = TFF.to_tensor(img_show)
+            decode_pred = TFF.to_tensor(decode_pred/255.0)
+            img_show = torch.cat([img_cam, decode_pred], dim=-1)
+            batch.append(img_show)
+        grid_img = visualizer.make_grid(batch)
+
+        fig = plt.figure(figsize=(16,8))
+        plt.axis('off')
+        plt.title('Raw image - Prediction')
+        plt.imshow(grid_img)
+
+        # segmentation color legends 
+        classes = self.valloader.dataset.classnames
+        patches = [mpatches.Patch(color=np.array(color_list[i][::-1]), 
+                                label=classes[i]) for i in range(len(classes))]
+        plt.legend(handles=patches, bbox_to_anchor=(-0.03, 1), loc="upper right", borderaxespad=0., 
+                fontsize='large')
+        plt.tight_layout(pad=0)
+
+        LOGGER.log([{
+            'tag': f"Validation/unsup_prediction",
             'value': fig,
             'type': LoggerObserver.FIGURE,
             'kwargs': {
@@ -225,6 +298,9 @@ class S4Trainer(SemiSupervisedTrainer):
             }
         }])
         
+    def visualize_pred(self):
+        self.visualize_sup_pred()
+        self.visualize_unsup_pred()
 
     @torch.no_grad()
     def visualize_model(self):
@@ -273,8 +349,7 @@ class S4Trainer(SemiSupervisedTrainer):
 
     def on_evaluate_end(self):
         if self.visualize_when_val:
-            self.visualize_pred(model_id=1)
-            self.visualize_pred(model_id=2)
+            self.visualize_pred()
         self.save_checkpoint()
     
     def on_start(self):
@@ -287,6 +362,5 @@ class S4Trainer(SemiSupervisedTrainer):
         self.visualize_model()
         self.visualize_sup_gt()
         self.visualize_unsup_gt()
-        self.evaluate_epoch(model_id=1)
-        self.evaluate_epoch(model_id=2)
+        self.evaluate_epoch()
         self.analyze_gt()
