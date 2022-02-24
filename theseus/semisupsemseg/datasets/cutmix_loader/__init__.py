@@ -7,12 +7,12 @@ class CutmixCollateWrapper(object):
     def __init__(self, batch_aug_fn=None):
         self.batch_aug_fn = batch_aug_fn
         self.mask_generator = BoxMaskGenerator(
-            cutmix_mask_prop_range = (0.25, 0.5),
-            cutmix_boxmask_n_boxes = 3,
-            cutmix_boxmask_fixed_aspect_ratio = True,
-            cutmix_boxmask_by_size = False,
-            cutmix_boxmask_outside_bounds = False,
-            cutmix_boxmask_no_invert = True
+            prop_range = (0.25, 0.5),
+            n_boxes = 3,
+            random_aspect_ratio = True,
+            prop_by_area = False,
+            within_bounds = False,
+            invert = True
         )
 
     def _generate_cutmix_mask(self, num_masks: int, width: int, height: int):

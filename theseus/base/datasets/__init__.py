@@ -7,6 +7,7 @@ DATASET_REGISTRY = Registry('DATASET')
 DATASET_REGISTRY.register(Dataset)
 DATASET_REGISTRY.register(ChainDataset)
 DATASET_REGISTRY.register(ConcatDataset)
+DATASET_REGISTRY.register(ImageDataset)
 
 DATALOADER_REGISTRY = Registry('DATALOADER')
 DATALOADER_REGISTRY.register(DataLoader)

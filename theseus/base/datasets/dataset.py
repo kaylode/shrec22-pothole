@@ -4,6 +4,7 @@ from PIL import Image
 import torch
 import torch.utils.data as data
 from typing import Iterable
+import numpy as np
 
 class ConcatDataset(data.ConcatDataset):
     def __init__(self, datasets: Iterable[data.Dataset], **kwargs) -> None:
@@ -58,9 +59,10 @@ class ImageDataset(data.Dataset):
         image_path = self.fns[index]
         im = Image.open(image_path).convert('RGB')
         width, height = im.width, im.height
+        im = np.array(im)
 
         if self.transform is not None: 
-            im = self.transform(im)
+            im = self.transform(image=im)['image']
 
         return {
             "input": im, 

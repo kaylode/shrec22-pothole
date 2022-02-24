@@ -39,7 +39,8 @@ class S4Trainer(SemiSupervisedTrainer):
         Save all information of the current iteration
         """
         weights = {
-            'model': self.model.model1.state_dict(),
+            'model1': self.model.model1.state_dict(),
+            'model2': self.model.model2.state_dict(),
             'optimizer': self.optimizer.state_dict(),
             'epoch': self.epoch,
             'iters': self.iters,
@@ -63,14 +64,14 @@ class S4Trainer(SemiSupervisedTrainer):
         self.scaler = load_state_dict(self.scaler, state_dict, self.scaler.state_dict_key)
 
         
-    def visualize_gt(self):
+    def visualize_sup_gt(self):
         """
         Visualize dataloader for sanity check 
         """
 
-        LOGGER.text("Visualizing dataset...", level=LoggerObserver.DEBUG)
+        LOGGER.text("Visualizing supervised dataset...", level=LoggerObserver.DEBUG)
         visualizer = Visualizer()
-        batch = next(iter(self.trainloader))
+        batch = next(iter(self.suptrainloader))
         images = batch["inputs"]
         masks = batch['targets'].squeeze()
 
@@ -136,8 +137,38 @@ class S4Trainer(SemiSupervisedTrainer):
             }
         }])
 
+    def visualize_unsup_gt(self):
+        """
+        Visualize dataloader for sanity check 
+        """
+
+        LOGGER.text("Visualizing unsupervised dataset...", level=LoggerObserver.DEBUG)
+        visualizer = Visualizer()
+        batch = next(iter(self.unsuptrainloader1))
+        images = batch["inputs"]
+
+        batch = []
+        for idx, inputs in enumerate(images):
+            img_show = visualizer.denormalize(inputs)
+            img_show = TFF.to_tensor(img_show)
+            batch.append(img_show)
+        grid_img = visualizer.make_grid(batch)
+
+        fig = plt.figure(figsize=(16,8))
+        plt.axis('off')
+        plt.imshow(grid_img)
+
+        LOGGER.log([{
+            'tag': "Sanitycheck/batch/train",
+            'value': fig,
+            'type': LoggerObserver.FIGURE,
+            'kwargs': {
+                'step': self.iters
+            }
+        }])
+
     @torch.no_grad()
-    def visualize_pred(self):
+    def visualize_pred(self, model_id = 1):
         r"""Visualize model prediction 
         
         """
@@ -153,8 +184,12 @@ class S4Trainer(SemiSupervisedTrainer):
         images = batch["inputs"]
         masks = batch['targets'].squeeze()
 
-        preds = self.model.model1.get_prediction(
-            {'inputs': images, 'thresh': 0.5}, self.model.device)['masks']
+        if model_id == 1:
+            preds = self.model.model1.get_prediction(
+                {'inputs': images}, self.model.device)['masks']
+        else:
+            preds = self.model.model2.get_prediction(
+                {'inputs': images}, self.model.device)['masks']
 
         batch = []
         for idx, (inputs, mask, pred) in enumerate(zip(images, masks, preds)):
@@ -200,7 +235,7 @@ class S4Trainer(SemiSupervisedTrainer):
         images = batch["inputs"].to(self.model.device)
         LOGGER.log([{
             'tag': "Sanitycheck/analysis/architecture",
-            'value': self.model.model,
+            'value': self.model.model1,
             'type': LoggerObserver.TORCH_MODULE,
             'kwargs': {
                 'inputs': images
@@ -213,7 +248,7 @@ class S4Trainer(SemiSupervisedTrainer):
         """
         LOGGER.text("Analyzing datasets...", level=LoggerObserver.DEBUG)
         analyzer = SegmentationAnalyzer()
-        analyzer.add_dataset(self.trainloader.dataset)
+        analyzer.add_dataset(self.suptrainloader.dataset)
         fig = analyzer.analyze(figsize=(10,5))
         LOGGER.log([{
             'tag': "Sanitycheck/analysis/train",
@@ -238,7 +273,8 @@ class S4Trainer(SemiSupervisedTrainer):
 
     def on_evaluate_end(self):
         if self.visualize_when_val:
-            self.visualize_pred()
+            self.visualize_pred(model_id=1)
+            self.visualize_pred(model_id=2)
         self.save_checkpoint()
     
     def on_start(self):
@@ -248,7 +284,8 @@ class S4Trainer(SemiSupervisedTrainer):
     def sanitycheck(self):
         """Sanity check before training
         """
-        self.visualize_gt()
-        self.analyze_gt()
         self.visualize_model()
+        self.visualize_sup_gt()
+        self.visualize_unsup_gt()
         self.evaluate_epoch()
+        self.analyze_gt()

@@ -214,7 +214,7 @@ class SemiSupervisedTrainer(object):
             running_time += end_time-start_time
 
             # Calculate current iteration
-            self.iters = self.start_iter + len(self.num_iter_per_epoch)*self.epoch + i + 1
+            self.iters = self.start_iter + self.num_iter_per_epoch*self.epoch + i + 1
 
             # Logging
             if self.iters % self.print_per_iter == 0:
