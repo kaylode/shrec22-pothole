@@ -41,7 +41,7 @@ class TeacherStudentModel(nn.Module):
 
     def _update_ema_variables(self, ema_decay):
         for t_param, s_param in zip(self.model_t.parameters(), self.model_s.parameters()):
-            t_param.data.mul_(ema_decay).add_(1 - ema_decay, s_param.data)
+            t_param.data.mul_(ema_decay).add_(s_param.data, 1 - ema_decay)
 
     def forward(self, batch, metrics=None):
         inputs = batch["inputs"].to(self.device)
@@ -81,7 +81,7 @@ class TeacherStudentModel(nn.Module):
         softmax_pred_t = F.softmax(t_probs, 1)
 
         ## Mean teacher loss
-        csst_loss = self.criterion_csst(softmax_pred_s, softmax_pred_t.detach())
+        csst_loss, _ = self.criterion_csst(softmax_pred_s, {'targets':softmax_pred_t.detach()}, self.device)
         csst_loss = self.weights[1] * csst_loss
 
         # Supervised loss
