@@ -3,15 +3,15 @@ from datetime import datetime
 
 import os
 import torch
-from theseus.semisupsemseg.models.wrapper import ModelWithLoss
+from theseus.cps.models.wrapper import ModelWithLoss
 from theseus.opt import Config
 from theseus.base.optimizers import OPTIM_REGISTRY, SCHEDULER_REGISTRY
-from theseus.semisupsemseg.augmentations import TRANSFORM_REGISTRY
-from theseus.semisupsemseg.losses import LOSS_REGISTRY
-from theseus.semisupsemseg.datasets import DATASET_REGISTRY, DATALOADER_REGISTRY
-from theseus.semisupsemseg.trainer import TRAINER_REGISTRY
-from theseus.semisupsemseg.metrics import METRIC_REGISTRY
-from theseus.semisupsemseg.models import MODEL_REGISTRY
+from theseus.cps.augmentations import TRANSFORM_REGISTRY
+from theseus.cps.losses import LOSS_REGISTRY
+from theseus.cps.datasets import DATASET_REGISTRY, DATALOADER_REGISTRY
+from theseus.cps.trainer import TRAINER_REGISTRY
+from theseus.cps.metrics import METRIC_REGISTRY
+from theseus.cps.models import MODEL_REGISTRY
 from theseus.utilities.getter import (get_instance, get_instance_recursively)
 from theseus.utilities.loggers import LoggerObserver, TensorboardLogger, StdoutLogger, ImageWriter
 from theseus.utilities.loading import load_state_dict, find_old_tflog

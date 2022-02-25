@@ -1,6 +1,6 @@
 global:
   debug: true
-  cfg_transform: configs/semisupsemseg/transform.yaml
+  cfg_transform: configs/cps/transform.yaml
   save_dir: /content/main/runs
   device: cuda:0
   use_fp16: true
@@ -25,7 +25,7 @@ model1:
 model2:
   name: BaseSegModel
   args:
-    name: unetplusplus
+    name: deeplabv3plus
     encoder_name: efficientnet-b0
 sup_loss:
   name: OhemCELoss
@@ -41,10 +41,13 @@ metrics:
 - name: DiceScore
   args:
     ignore_index: 0
+- name: mIOU
+  args:
+    ignore_index: 0
 optimizer:
   name: AdamW
   args:
-    lr: 0.001
+    lr: 0.0005
     weight_decay: 0.0005
     betas:
     - 0.937
@@ -56,7 +59,7 @@ scheduler:
     t_initial: 7
     t_mul: 0.9
     eta_mul: 0.9
-    eta_min: 1.0e-06
+    eta_min: 1.0e-07
 data:
   dataset:
     sup_train:
@@ -71,12 +74,12 @@ data:
     unsup_train1:
       name: ImageDataset
       args:
-        image_dir: /content/main/data/shrec22-pothole/pothole-mix/training
+        image_dir: /content/main/data/rgbd-unlabelled/meta
         txt_classnames: configs/segmentation/classes.txt
     unsup_train2:
       name: ImageDataset
       args:
-        image_dir: /content/main/data/shrec22-pothole/pothole-mix/training
+        image_dir: /content/main/data/rgbd-unlabelled/meta
         txt_classnames: configs/segmentation/classes.txt
     val:
       name: CSVDataset
@@ -89,27 +92,27 @@ data:
     sup_train:
       name: DataLoaderWithCollator
       args:
-        batch_size: 16
+        batch_size: 8
         drop_last: false
         shuffle: true
 
     unsup_train1:
-      name: CutmixLoader
+      name: DataLoaderWithCollator
       args:
         batch_size: 8
-        drop_last: false
+        drop_last: true
         shuffle: true
 
     unsup_train2:
       name: DataLoaderWithCollator
       args:
         batch_size: 8
-        drop_last: false
+        drop_last: true
         shuffle: true
 
     val:
       name: DataLoaderWithCollator
       args:
-        batch_size: 16
+        batch_size: 8
         drop_last: false
         shuffle: true
