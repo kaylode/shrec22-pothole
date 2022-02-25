@@ -41,7 +41,7 @@ class TeacherStudentModel(nn.Module):
 
     def _update_ema_variables(self, ema_decay):
         for t_param, s_param in zip(self.model_t.parameters(), self.model_s.parameters()):
-            t_param.data.mul_(ema_decay).add_(s_param.data, 1 - ema_decay)
+            t_param.data.mul_(ema_decay).add_(s_param.data * (1 - ema_decay))
 
     def forward(self, batch, metrics=None):
         inputs = batch["inputs"].to(self.device)
@@ -62,14 +62,17 @@ class TeacherStudentModel(nn.Module):
         sup_inputs = sup_batch['inputs'].to(self.device)
         unsup_inputs = unsup_batch['inputs'].to(self.device)
         
-        ## Get student prediction for sup and unsup inputs
+        ## Get predictions for supervised inputs
         s_sup_probs = self.model_s(sup_inputs)
-        self._update_ema_variables(self.ema_decay)
-        s_unsup_probs = self.model_s(unsup_inputs)
-
-        ## Get teacher prediction for sup and unsup  inputs
         with torch.no_grad():
             t_sup_probs = self.model_t(sup_inputs)
+
+        ## EMA update teacher model
+        self._update_ema_variables(self.ema_decay)
+
+        ## Get predictions for unsupervised inputs
+        s_unsup_probs = self.model_s(unsup_inputs)
+        with torch.no_grad():
             t_unsup_probs = self.model_t(unsup_inputs)
 
         ## Concatenate outputs
@@ -77,8 +80,8 @@ class TeacherStudentModel(nn.Module):
         t_probs = torch.cat([t_sup_probs, t_unsup_probs], dim=0)
 
         ## Get softmax normalization
-        softmax_pred_s = F.softmax(s_probs, 1)
-        softmax_pred_t = F.softmax(t_probs, 1)
+        softmax_pred_s = F.softmax(s_probs, dim=1)
+        softmax_pred_t = F.softmax(t_probs, dim=1)
 
         ## Mean teacher loss
         csst_loss, _ = self.criterion_csst(softmax_pred_s, {'targets':softmax_pred_t.detach()}, self.device)

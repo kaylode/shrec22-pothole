@@ -179,7 +179,6 @@ class Pipeline(object):
         self.logger.text(f"Number of validation samples: {len(self.val_dataset)}", level=LoggerObserver.INFO)
         self.logger.text(f"Number of supervised  training iterations each epoch: {len(self.sup_train_dataloader)}", level=LoggerObserver.INFO)
         self.logger.text(f"Number of unsupervised1 training iterations each epoch: {len(self.unsup_train_dataloader)}", level=LoggerObserver.INFO)
-        self.logger.text(f"Number of unsupervised2 training iterations each epoch: {len(self.unsup_train_dataloader2)}", level=LoggerObserver.INFO)
         self.logger.text(f"Number of validation iterations each epoch: {len(self.val_dataloader)}", level=LoggerObserver.INFO)
         self.logger.text(f"Everything will be saved to {self.savedir}", level=LoggerObserver.INFO)
 
