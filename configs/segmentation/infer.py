@@ -130,8 +130,11 @@ class TestPipeline(object):
                 raw_image = visualizer.denormalize(input)   
                 raw_image = (raw_image*255).astype(np.uint8)
                 ori_image = cv2.resize(raw_image, dsize=tuple(ori_size))
+                ori_image = cv2.cvtColor(ori_image, cv2.COLOR_RGB2BGR)
                 overlay = ori_image * 0.75 + resized_decode_mask * 0.25
                 savepath = os.path.join(saved_overlay_dir, filename)
+                dirname = os.path.dirname(savepath)
+                os.makedirs(dirname, exist_ok=True)
                 cv2.imwrite(savepath, overlay)
 
                 self.logger.text(f"Save image at {savepath}", level=LoggerObserver.INFO)

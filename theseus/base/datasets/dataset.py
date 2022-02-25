@@ -76,8 +76,10 @@ class ImageDataset(data.Dataset):
     def collate_fn(self, batch: List):
         imgs = torch.stack([s['input'] for s in batch])
         img_names = [s['img_name'] for s in batch]
+        ori_sizes = [i['ori_size'] for i in batch]
 
         return {
             'inputs': imgs,
-            'img_names': img_names
+            'img_names': img_names,
+            'ori_sizes': ori_sizes
         }
