@@ -2,11 +2,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class FocalTverskyLoss(nn.Module):
-    def __init__(self, smooth=1, alpha=0.7, beta=0.3, gamma=4/3, **kwargs):
+    def __init__(self, smooth=1, alpha=0.7, gamma=0.75, **kwargs):
         super(FocalTverskyLoss, self).__init__()
         self.smooth = smooth
         self.alpha = alpha
-        self.beta = beta
+        self.beta = 1-alpha
         self.gamma = gamma
 
     def forward(self, predict, batch, device):
@@ -22,7 +22,7 @@ class FocalTverskyLoss(nn.Module):
         FP = ((1-targets) * prediction).sum()
         FN = (targets * (1-prediction)).sum()
         
-        tversky = (TP + self.smooth) / (TP + self.alpha*FP + self.beta*FN + self.smooth)  
+        tversky = (TP + self.smooth) / (TP + self.alpha*FN + self.beta*FP + self.smooth)  
         loss = (1 - tversky)**self.gamma
         
         loss_dict = {"FT": loss.item()}
