@@ -1,0 +1,1 @@
+from theseus.segmentation.augmentations import TRANSFORM_REGISTRY

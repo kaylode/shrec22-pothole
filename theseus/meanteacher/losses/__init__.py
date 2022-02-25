@@ -1,0 +1,1 @@
+from theseus.segmentation.losses import LOSS_REGISTRY
