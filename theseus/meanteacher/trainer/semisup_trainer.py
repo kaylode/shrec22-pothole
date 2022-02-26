@@ -162,14 +162,18 @@ class SemiSupervisedTrainer(object):
                 suptrainloader = iter(self.suptrainloader)
                 sup_batch = suptrainloader.next()
 
-            unsup_batch = unsuptrainloader.next()
+            try:
+                unsup_batch = unsuptrainloader.next()
+            except StopIteration as e:
+                unsuptrainloader = iter(self.unsuptrainloader)
+                unsup_batch = unsuptrainloader.next()
             
             start_time = time.time()
 
             loss = 0
             # Gradient scaler
             with amp.autocast(enabled=self.use_amp):
-                outputs = self.model.training_step(sup_batch, unsup_batch, global_Step=self.iters)
+                outputs = self.model.training_step(sup_batch, unsup_batch, global_step=self.iters)
                 loss = outputs['loss']
                 loss_dict = outputs['loss_dict']
                 loss /= self.accumulate_steps
