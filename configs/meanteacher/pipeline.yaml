@@ -20,7 +20,7 @@ trainer:
 teacher_student:
   ema_decay: 0.999
   distillation: False
-  pseuo_supervision: False
+  pseudo_supervision: False
   weights: [1.0, 100.0]
 model_s:
   name: BaseSegModel

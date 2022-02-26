@@ -21,7 +21,7 @@ class TeacherStudentModel(nn.Module):
         device: torch.device,
         ema_decay: float = 0.999,
         distillation: bool = False,
-        pseuo_supervision: bool = False,
+        pseudo_supervision: bool = False,
         weights: List[float] = [1.0, 100.0]):
 
         super().__init__()
@@ -32,7 +32,7 @@ class TeacherStudentModel(nn.Module):
         self.device = device
         self.ema_decay = ema_decay
         self.distillation = distillation
-        self.pseuo_supervision = pseuo_supervision
+        self.pseudo_supervision = pseudo_supervision
         self.weights = weights
         self.num_classes = self.model_s.num_classes
 
@@ -73,9 +73,9 @@ class TeacherStudentModel(nn.Module):
         sup_inputs = sup_batch['inputs'].to(self.device)
         unsup_inputs = unsup_batch['inputs'].to(self.device)
 
-        if not self.distillation:
+        if self.distillation:
             self.model_t.eval()
-        
+
         ## Get student predictions for inputs
         s_sup_probs = self.model_s(sup_inputs)
         s_unsup_probs = self.model_s(unsup_inputs)
@@ -98,7 +98,7 @@ class TeacherStudentModel(nn.Module):
         t_sup_loss, _ = self.criterion_sup(t_sup_probs, sup_batch, self.device)
 
         # Unsupervised loss
-        if self.pseuo_supervision:
+        if self.pseudo_supervision:
             ## Pseudo supervision, use teacher prediction as student targets
             t_pseudo_unsup_pred = torch.argmax(t_unsup_probs, dim=1)
             t_pseudo_unsup_pred = t_pseudo_unsup_pred.long()
