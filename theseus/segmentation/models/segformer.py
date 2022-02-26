@@ -46,7 +46,7 @@ class SegFormer(nn.Module):
 
     def forward(self, x):
         outputs = self.model(pixel_values=x)
-        upscaled_logits = F.interpolate(outputs.logits, self.image_size, mode="nearest")
+        upscaled_logits = F.interpolate(outputs.logits, self.image_size, mode="bilinear", align_corners=False)
         return upscaled_logits
 
     def get_prediction(self, adict: Dict[str, Any], device: torch.device):
