@@ -169,7 +169,7 @@ class SemiSupervisedTrainer(object):
             loss = 0
             # Gradient scaler
             with amp.autocast(enabled=self.use_amp):
-                outputs = self.model.training_step(sup_batch, unsup_batch)
+                outputs = self.model.training_step(sup_batch, unsup_batch, global_Step=self.iters)
                 loss = outputs['loss']
                 loss_dict = outputs['loss_dict']
                 loss /= self.accumulate_steps

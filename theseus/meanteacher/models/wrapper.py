@@ -39,7 +39,8 @@ class TeacherStudentModel(nn.Module):
         for t_param, s_param in zip(self.model_t.parameters(), self.model_s.parameters()):
             t_param.data.copy_(s_param.data)
 
-    def _update_ema_variables(self, ema_decay):
+    def _update_ema_variables(self, ema_decay, global_step):
+        ema_decay = min(1 - 1 / (global_step + 1), ema_decay)
         for t_param, s_param in zip(self.model_t.parameters(), self.model_s.parameters()):
             t_param.data.mul_(ema_decay).add_(s_param.data * (1 - ema_decay))
 
@@ -58,22 +59,21 @@ class TeacherStudentModel(nn.Module):
             'loss_dict': loss_dict
         }
 
-    def training_step(self, sup_batch, unsup_batch):
+    def training_step(self, sup_batch, unsup_batch, global_Step):
         sup_inputs = sup_batch['inputs'].to(self.device)
         unsup_inputs = unsup_batch['inputs'].to(self.device)
         
-        ## Get predictions for supervised inputs
+        ## Get student predictions for inputs
         s_sup_probs = self.model_s(sup_inputs)
+        s_unsup_probs = self.model_s(unsup_inputs)
+
+        ## Get teacher predictions for inputs
         with torch.no_grad():
             t_sup_probs = self.model_t(sup_inputs)
+            t_unsup_probs = self.model_t(unsup_inputs)
 
         ## EMA update teacher model
-        self._update_ema_variables(self.ema_decay)
-
-        ## Get predictions for unsupervised inputs
-        s_unsup_probs = self.model_s(unsup_inputs)
-        with torch.no_grad():
-            t_unsup_probs = self.model_t(unsup_inputs)
+        self._update_ema_variables(self.ema_decay, global_Step=global_Step)
 
         ## Concatenate outputs
         s_probs = torch.cat([s_sup_probs, s_unsup_probs], dim=0)
