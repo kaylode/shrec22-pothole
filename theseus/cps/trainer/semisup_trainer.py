@@ -23,8 +23,10 @@ class SemiSupervisedTrainer(object):
                 unsuptrainloader2, 
                 valloader,
                 metrics,
-                optimizer,
-                scheduler,
+                optimizer1,
+                optimizer2,
+                scheduler1,
+                scheduler2,
                 save_dir: str = 'runs',
                 use_fp16: bool = False, 
                 num_epochs: int = 100,
@@ -41,8 +43,10 @@ class SemiSupervisedTrainer(object):
         
         self.model = model
         self.metrics = metrics 
-        self.optimizer = optimizer
-        self.scheduler = scheduler
+        self.optimizer1 = optimizer1
+        self.optimizer2 = optimizer2
+        self.scheduler1 = scheduler1
+        self.scheduler2 = scheduler2
         self.suptrainloader = suptrainloader
         self.unsuptrainloader1 = unsuptrainloader1
         self.unsuptrainloader2 = unsuptrainloader2
@@ -52,7 +56,7 @@ class SemiSupervisedTrainer(object):
         self.checkpoint = Checkpoint(os.path.join(self.save_dir, 'checkpoints'))
         self.num_epochs = num_epochs
         self.num_iter_per_epoch = num_iter_per_epoch
-        self.step_per_epoch = self.scheduler.step_per_epoch
+        self.step_per_epoch = self.scheduler1.step_per_epoch
         self.use_amp = True if use_fp16 else False
         self.scaler = NativeScaler() if use_fp16 else False
 
@@ -80,7 +84,8 @@ class SemiSupervisedTrainer(object):
 
         # Init scheduler params
         if self.step_per_epoch:
-            self.scheduler.last_epoch = self.epoch - 1
+            self.scheduler1.last_epoch = self.epoch - 1
+            self.scheduler2.last_epoch = self.epoch - 1
 
         LOGGER.text(f'===========================START TRAINING=================================', level=LoggerObserver.INFO)
         for epoch in range(self.epoch, self.num_epochs):
@@ -128,8 +133,9 @@ class SemiSupervisedTrainer(object):
 
     def on_epoch_end(self):
         if self.step_per_epoch:
-            self.scheduler.step()
-            lrl = [x['lr'] for x in self.optimizer.param_groups]
+            self.scheduler1.step()
+            self.scheduler2.step()
+            lrl = [x['lr'] for x in self.optimizer1.param_groups]
             lr = sum(lrl) / len(lrl)
             LOGGER.log([{
                 'tag': 'Training/Learning rate',
@@ -156,7 +162,8 @@ class SemiSupervisedTrainer(object):
         running_loss = {}
         running_time = 0
 
-        self.optimizer.zero_grad()
+        self.optimizer1.zero_grad()
+        self.optimizer2.zero_grad()
         for i in range(self.num_iter_per_epoch):
 
             sup_batch = suptrainloader.next()
@@ -174,14 +181,16 @@ class SemiSupervisedTrainer(object):
                 loss /= self.accumulate_steps
                 
             # Backward loss
-            self.scaler(loss, self.optimizer)
+            self.scaler(loss, self.optimizer1)
             
             if i % self.accumulate_steps == 0 or i == len(self.trainloader)-1:
-                self.scaler.step(self.optimizer, clip_grad=self.clip_grad, parameters=self.model.parameters())
+                self.scaler.step(self.optimizer1, clip_grad=self.clip_grad, parameters=self.model.model1.parameters())
+                self.scaler.step(self.optimizer2, clip_grad=self.clip_grad, parameters=self.model.model2.parameters())
 
                 if not self.step_per_epoch:
-                    self.scheduler.step()
-                    lrl = [x['lr'] for x in self.optimizer.param_groups]
+                    self.scheduler1.step()
+                    self.scheduler2.step()
+                    lrl = [x['lr'] for x in self.optimizer1.param_groups]
                     lr = sum(lrl) / len(lrl)
 
                     LOGGER.log([{
@@ -194,7 +203,8 @@ class SemiSupervisedTrainer(object):
                     }])
 
 
-                self.optimizer.zero_grad()
+                self.optimizer1.zero_grad()
+                self.optimizer2.zero_grad()
 
             torch.cuda.synchronize()
             end_time = time.time()

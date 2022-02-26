@@ -137,27 +137,44 @@ class Pipeline(object):
             classnames=CLASSNAMES,
             num_classes=len(CLASSNAMES))
 
-        self.optimizer = get_instance(
+        self.optimizer1 = get_instance(
             self.opt["optimizer"],
             registry=OPTIM_REGISTRY,
-            params=self.model.parameters(),
+            params=self.model.model1.parameters(),
+        )
+
+        self.optimizer2 = get_instance(
+            self.opt["optimizer"],
+            registry=OPTIM_REGISTRY,
+            params=self.model.model2.parameters(),
         )
 
         last_epoch = -1
         if self.pretrained:
             state_dict = torch.load(self.pretrained)
-            self.model.model1 = load_state_dict(self.model.model1, state_dict, 'model1')
-            self.model.model2 = load_state_dict(self.model.model2, state_dict, 'model2')
+            self.model.model1 = load_state_dict(self.model.model1, state_dict, 'model')
+            self.model.model2 = load_state_dict(self.model.model2, state_dict, 'model')
 
         if self.resume:
             state_dict = torch.load(self.resume)
             self.model.model1 = load_state_dict(self.model.model1, state_dict, 'model1')
             self.model.model2 = load_state_dict(self.model.model2, state_dict, 'model2')
-            self.optimizer = load_state_dict(self.optimizer, state_dict, 'optimizer')
+            self.optimizer1 = load_state_dict(self.optimizer1, state_dict, 'optimizer1')
+            self.optimizer2 = load_state_dict(self.optimizer2, state_dict, 'optimizer2')
             last_epoch = load_state_dict(last_epoch, state_dict, 'epoch')
 
-        self.scheduler = get_instance(
-            self.opt["scheduler"], registry=SCHEDULER_REGISTRY, optimizer=self.optimizer,
+        self.scheduler1 = get_instance(
+            self.opt["scheduler"], registry=SCHEDULER_REGISTRY, optimizer=self.optimizer1,
+            **{
+                'num_epochs': self.opt["trainer"]['args']['num_epochs'],
+                'trainset': self.sup_train_dataset,
+                'batch_size': self.opt["data"]['dataloader']['val']['args']['batch_size'],
+                'last_epoch': last_epoch,
+            }
+        )
+
+        self.scheduler2 = get_instance(
+            self.opt["scheduler"], registry=SCHEDULER_REGISTRY, optimizer=self.optimizer2,
             **{
                 'num_epochs': self.opt["trainer"]['args']['num_epochs'],
                 'trainset': self.sup_train_dataset,
@@ -174,8 +191,10 @@ class Pipeline(object):
             unsuptrainloader2=self.unsup_train_dataloader2,
             valloader=self.val_dataloader,
             metrics=self.metrics,
-            optimizer=self.optimizer,
-            scheduler=self.scheduler,
+            optimizer1=self.optimizer1,
+            optimizer2=self.optimizer2,
+            scheduler1=self.scheduler1,
+            scheduler2=self.scheduler2,
             use_fp16=self.use_fp16,
             save_dir=self.savedir,
             resume=self.resume,

@@ -41,7 +41,8 @@ class S4Trainer(SemiSupervisedTrainer):
         weights = {
             'model1': self.model.model1.state_dict(),
             'model2': self.model.model2.state_dict(),
-            'optimizer': self.optimizer.state_dict(),
+            'optimizer1': self.optimizer1.state_dict(),
+            'optimizer2': self.optimizer2.state_dict(),
             'epoch': self.epoch,
             'iters': self.iters,
             'best_value': self.best_value,
