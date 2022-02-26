@@ -124,7 +124,8 @@ class Pipeline(object):
             model_t,
             sup_criterion, 
             csst_criterion, 
-            self.device)
+            self.device,
+            **self.opt["teacher_student"])
 
         self.metrics = get_instance_recursively(
             self.opt['metrics'], 

@@ -19,7 +19,9 @@ class TeacherStudentModel(nn.Module):
         criterion_sup: nn.Module, 
         criterion_csst: nn.Module, 
         device: torch.device,
-        ema_decay: float = 0.99,
+        ema_decay: float = 0.999,
+        distillation: bool = False,
+        pseuo_supervision: bool = False,
         weights: List[float] = [1.0, 100.0]):
 
         super().__init__()
@@ -29,6 +31,8 @@ class TeacherStudentModel(nn.Module):
         self.criterion_csst = criterion_csst
         self.device = device
         self.ema_decay = ema_decay
+        self.distillation = distillation
+        self.pseuo_supervision = pseuo_supervision
         self.weights = weights
         self.num_classes = self.model_s.num_classes
 
@@ -36,7 +40,13 @@ class TeacherStudentModel(nn.Module):
         for param in self.model_t.parameters():
             param.detach_()
 
-        for t_param, s_param in zip(self.model_t.parameters(), self.model_s.parameters()):
+        if not self.distillation:
+            self.copy_parameters(self.model_s, self.model_t)
+        else:
+            self.model_t.eval()
+
+    def copy_parameters(self, model_source, model_target):
+        for t_param, s_param in zip(model_target.parameters(), model_source.parameters()):
             t_param.data.copy_(s_param.data)
 
     def _update_ema_variables(self, ema_decay, global_step):
@@ -59,9 +69,12 @@ class TeacherStudentModel(nn.Module):
             'loss_dict': loss_dict
         }
 
-    def training_step(self, sup_batch, unsup_batch, global_Step):
+    def training_step(self, sup_batch, unsup_batch, global_step):
         sup_inputs = sup_batch['inputs'].to(self.device)
         unsup_inputs = unsup_batch['inputs'].to(self.device)
+
+        if not self.distillation:
+            self.model_t.eval()
         
         ## Get student predictions for inputs
         s_sup_probs = self.model_s(sup_inputs)
@@ -72,23 +85,11 @@ class TeacherStudentModel(nn.Module):
             t_sup_probs = self.model_t(sup_inputs)
             t_unsup_probs = self.model_t(unsup_inputs)
 
-        ## EMA update teacher model
-        self._update_ema_variables(self.ema_decay, global_Step=global_Step)
-
-        ## Concatenate outputs
-        s_probs = torch.cat([s_sup_probs, s_unsup_probs], dim=0)
-        t_probs = torch.cat([t_sup_probs, t_unsup_probs], dim=0)
-
-        ## Get softmax normalization
-        softmax_pred_s = F.softmax(s_probs, dim=1)
-        softmax_pred_t = F.softmax(t_probs, dim=1)
-
-        ## Mean teacher loss
-        csst_loss, _ = self.criterion_csst(softmax_pred_s, {'targets':softmax_pred_t.detach()}, self.device)
-        csst_loss = self.weights[1] * csst_loss
+        if not self.distillation:
+            ## EMA update teacher model
+            self._update_ema_variables(self.ema_decay, global_step=global_step)
 
         # Supervised loss
-
         ## Student loss
         s_sup_loss, _ = self.criterion_sup(s_sup_probs, sup_batch, self.device)
         s_sup_loss = self.weights[0] * s_sup_loss
@@ -96,14 +97,51 @@ class TeacherStudentModel(nn.Module):
         ## Teacher loss. No backward
         t_sup_loss, _ = self.criterion_sup(t_sup_probs, sup_batch, self.device)
 
-        # Total loss
-        loss = s_sup_loss + csst_loss
-        loss_dict = {
-            'ST': s_sup_loss.item(),
-            'TC': t_sup_loss.item(),
-            'CSST': csst_loss.item(),
-            'Total': loss.item()  
-        }
+        # Unsupervised loss
+        if self.pseuo_supervision:
+            ## Pseudo supervision, use teacher prediction as student targets
+            t_pseudo_unsup_pred = torch.argmax(t_unsup_probs, dim=1)
+            t_pseudo_unsup_pred = t_pseudo_unsup_pred.long()
+            ## One-hot encoding
+            t_pseudo_one_hot_unsup_pred = torch.nn.functional.one_hot(
+                t_pseudo_unsup_pred, 
+                num_classes=self.num_classes).permute(0, 3, 1, 2)
+            s_ps_loss, _ = self.criterion_sup(
+                s_unsup_probs, 
+                {'targets': t_pseudo_one_hot_unsup_pred.float()}, 
+                self.device)
+            s_ps_loss = self.weights[1] * s_ps_loss
+            
+            ## Total loss
+            loss = s_sup_loss + s_ps_loss
+            loss_dict = {
+                'ST': s_sup_loss.item(),
+                'TC': t_sup_loss.item(),
+                'PS': s_ps_loss.item(),
+                'Total': loss.item()  
+            }
+        else:
+            ## Mean teacher, consistency constraint between teacher and student
+            ## Concatenate outputs
+            s_probs = torch.cat([s_sup_probs, s_unsup_probs], dim=0)
+            t_probs = torch.cat([t_sup_probs, t_unsup_probs], dim=0)
+
+            ## Get softmax normalization
+            softmax_pred_s = F.softmax(s_probs, dim=1)
+            softmax_pred_t = F.softmax(t_probs, dim=1)
+
+            ## Mean teacher loss
+            csst_loss, _ = self.criterion_csst(softmax_pred_s, {'targets':softmax_pred_t.detach()}, self.device)
+            csst_loss = self.weights[1] * csst_loss
+            
+            ## Total loss
+            loss = s_sup_loss + csst_loss
+            loss_dict = {
+                'ST': s_sup_loss.item(),
+                'TC': t_sup_loss.item(),
+                'CSST': csst_loss.item(),
+                'Total': loss.item()  
+            }
 
         return {
             'loss': loss,
