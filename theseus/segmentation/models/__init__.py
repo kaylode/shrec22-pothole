@@ -4,6 +4,7 @@ from .segmodels import BaseSegModel
 from .wrapper import ModelWithLoss
 from .unet import EfficientUNet, R2UNet, ResidUNet
 from .segformer import SegFormer
+from .beit import Beit
 
 MODEL_REGISTRY.register(BaseSegModel)
 MODEL_REGISTRY.register(SegFormer)
