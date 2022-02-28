@@ -19,6 +19,7 @@ from theseus.utilities.loggers import LoggerObserver, StdoutLogger
 from theseus.utilities.cuda import get_devices_info
 from theseus.utilities.getter import (get_instance, get_instance_recursively)
 from theseus.utilities.visualization.visualizer import Visualizer
+from theseus.cps.models.wrapper import ModelWithLoss
 
 class TestPipeline(object):
     def __init__(
@@ -61,15 +62,29 @@ class TestPipeline(object):
             dataset=self.dataset,
         )
 
-        self.model = get_instance(
-          self.opt["model"], 
+        self.model1 = get_instance(
+          self.opt["model1"], 
+          registry=MODEL_REGISTRY, 
+          classnames=CLASSNAMES,
+          num_classes=len(CLASSNAMES)).to(self.device)
+
+        self.model2 = get_instance(
+          self.opt["model2"], 
           registry=MODEL_REGISTRY, 
           classnames=CLASSNAMES,
           num_classes=len(CLASSNAMES)).to(self.device)
 
         if self.weights:
             state_dict = torch.load(self.weights)
-            self.model = load_state_dict(self.model, state_dict, 'model')
+            self.model1 = load_state_dict(self.model1, state_dict, 'model1')
+            self.model2 = load_state_dict(self.model2, state_dict, 'model2')
+
+        self.model = ModelWithLoss(
+            self.model1, 
+            self.model2,
+            criterion_sup=None, 
+            criterion_unsup=None, 
+            device=self.device)
 
     
     def infocheck(self):
@@ -112,6 +127,7 @@ class TestPipeline(object):
                 raw_image = visualizer.denormalize(input)   
                 raw_image = (raw_image*255).astype(np.uint8)
                 ori_image = cv2.resize(raw_image, dsize=tuple(ori_size))
+                ori_image = cv2.cvtColor(ori_image, cv2.COLOR_RGB2BGR)
                 overlay = ori_image * 0.75 + resized_decode_mask * 0.25
                 savepath = os.path.join(saved_overlay_dir, filename)
                 cv2.imwrite(savepath, overlay)

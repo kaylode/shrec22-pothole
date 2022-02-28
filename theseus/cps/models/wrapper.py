@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from typing import List, Dict, Any
+import torch.nn.functional as F
 
 class ModelWithLoss(nn.Module):
     """Add utilitarian functions for module to work with pipeline
@@ -18,7 +19,8 @@ class ModelWithLoss(nn.Module):
         criterion_sup: nn.Module, 
         criterion_unsup: nn.Module, 
         device: torch.device,
-        weights: List[float] = [1.0, 1.5]):
+        soft_cps: bool = False,
+        weights: List[float] = [0.8, 0.2]):
 
         super().__init__()
         self.model1 = model1
@@ -27,6 +29,7 @@ class ModelWithLoss(nn.Module):
         self.criterion_unsup = criterion_unsup
         self.device = device
         self.weights = weights
+        self.soft_cps = soft_cps
         self.num_classes = self.model1.num_classes
 
     def forward(self, batch, metrics=None):
@@ -52,39 +55,56 @@ class ModelWithLoss(nn.Module):
         unsup_inputs2 = unsup_batch2['inputs'].to(self.device)
 
         #Unsupervised loss
-        batch_mix_masks = unsup_batch1['cutmix_masks'].to(self.device)
-        unsup_imgs_mixed = unsup_inputs1 * (1 - batch_mix_masks) + unsup_inputs2 * batch_mix_masks
+        # batch_mix_masks = unsup_batch1['cutmix_masks'].to(self.device)
+        # unsup_imgs_mixed = unsup_inputs1 * (1 - batch_mix_masks) + unsup_inputs2 * batch_mix_masks
         with torch.no_grad():
             ## Estimate the pseudo-label with branch#1 & supervise branch#2
             logits_u0_tea_1 = self.model1(unsup_inputs1)
-            logits_u1_tea_1 = self.model1(unsup_inputs2)
+            # logits_u1_tea_1 = self.model1(unsup_inputs2)
             logits_u0_tea_1 = logits_u0_tea_1.detach()
-            logits_u1_tea_1 = logits_u1_tea_1.detach()
+            # logits_u1_tea_1 = logits_u1_tea_1.detach()
             ## Estimate the pseudo-label with branch#2 & supervise branch#1
-            logits_u0_tea_2 = self.model2(unsup_inputs1)
+            # logits_u0_tea_2 = self.model2(unsup_inputs1)
             logits_u1_tea_2 = self.model2(unsup_inputs2)
-            logits_u0_tea_2 = logits_u0_tea_2.detach()
+            # logits_u0_tea_2 = logits_u0_tea_2.detach()
             logits_u1_tea_2 = logits_u1_tea_2.detach()
 
-        logits_cons_tea_1 = logits_u0_tea_1 * (1 - batch_mix_masks) + logits_u1_tea_1 * batch_mix_masks
-        _, ps_label_1 = torch.max(logits_cons_tea_1, dim=1)
-        ps_label_1 = ps_label_1.long()
-        logits_cons_tea_2 = logits_u0_tea_2 * (1 - batch_mix_masks) + logits_u1_tea_2 * batch_mix_masks
-        _, ps_label_2 = torch.max(logits_cons_tea_2, dim=1)
-        ps_label_2 = ps_label_2.long()
+        if self.soft_cps:
+            logits_cons_tea_1 = logits_u0_tea_1 #* (1 - batch_mix_masks) + logits_u1_tea_1 * batch_mix_masks
+            one_hot_ps_label_1 = F.softmax(logits_cons_tea_1, dim=1)
 
-        ## One-hot encoding
-        one_hot_ps_label_1 = torch.nn.functional.one_hot(
-              ps_label_1, 
-              num_classes=self.num_classes).permute(0, 3, 1, 2)
-        one_hot_ps_label_2 = torch.nn.functional.one_hot(
-              ps_label_2, 
-              num_classes=self.num_classes).permute(0, 3, 1, 2)
+            logits_cons_tea_2 = logits_u1_tea_2 #* (1 - batch_mix_masks) + logits_u1_tea_2 * batch_mix_masks
+            one_hot_ps_label_2 = F.softmax(logits_cons_tea_2, dim=1)
+
+            ## Don't ask what these lines mean
+            one_hot_ps_label_2[:,0] *= 0.25
+            one_hot_ps_label_2[:,1] *= 0.4
+            one_hot_ps_label_2[:,2] *= 0.35
+
+            one_hot_ps_label_1[:,0] *= 0.3
+            one_hot_ps_label_1[:,1] *= 0.35
+            one_hot_ps_label_1[:,2] *= 0.35
+
+        else:
+            logits_cons_tea_1 = logits_u0_tea_1 #* (1 - batch_mix_masks) + logits_u1_tea_1 * batch_mix_masks
+            _, ps_label_1 = torch.max(logits_cons_tea_1, dim=1)
+            ps_label_1 = ps_label_1.long()
+            logits_cons_tea_2 = logits_u1_tea_2 #* (1 - batch_mix_masks) + logits_u1_tea_2 * batch_mix_masks
+            _, ps_label_2 = torch.max(logits_cons_tea_2, dim=1)
+            ps_label_2 = ps_label_2.long()
+
+            ## One-hot encoding
+            one_hot_ps_label_1 = torch.nn.functional.one_hot(
+                ps_label_1, 
+                num_classes=self.num_classes).permute(0, 3, 1, 2)
+            one_hot_ps_label_2 = torch.nn.functional.one_hot(
+                ps_label_2, 
+                num_classes=self.num_classes).permute(0, 3, 1, 2)
 
         ## Get student#1 prediction for mixed image
-        logits_cons_stu_1 = self.model1(unsup_imgs_mixed)
+        logits_cons_stu_1 = self.model1(unsup_inputs2)
         ## Get student#2 prediction for mixed image
-        logits_cons_stu_2 = self.model2(unsup_imgs_mixed)
+        logits_cons_stu_2 = self.model2(unsup_inputs1)
 
         cps_loss1, _ = self.criterion_unsup(
             logits_cons_stu_1, {'targets': one_hot_ps_label_2.float()}, self.device)
@@ -131,12 +151,22 @@ class ModelWithLoss(nn.Module):
     def get_model(self):
         return self
 
-    def ensemble_learning(self, logit1, logit2):
+    def ensemble_learning(self, logit1, logit2, reduction='max'):
         prob1 = torch.softmax(logit1, dim=1)
         prob2 = torch.softmax(logit2, dim=1)
 
         output = torch.stack([prob1, prob2], dim=0) # [2, B, C, H, W]
-        return output.sum(dim=0) #[B, C, H, W]
+        if reduction == 'sum':
+            output = output.sum(dim=0) #[B, C, H, W]
+        elif reduction == 'max':
+            output, _ = output.max(dim=0) #[B, C, H, W]
+
+        ## Down't ask this neither
+        output[:,0] *= 0.25
+        output[:,1] *= 0.4
+        output[:,2] *= 0.35
+
+        return output
 
     @torch.no_grad()
     def get_prediction(self, adict: Dict[str, Any], device: torch.device):

@@ -167,8 +167,14 @@ class SemiSupervisedTrainer(object):
         for i in range(self.num_iter_per_epoch):
 
             sup_batch = suptrainloader.next()
-            unsup_batch1 = unsuptrainloader1.next()
-            unsup_batch2 = unsuptrainloader2.next()
+            try:
+                unsup_batch1 = unsuptrainloader1.next()
+                unsup_batch2 = unsuptrainloader2.next()
+            except StopIteration as e:
+                unsuptrainloader1 = iter(self.unsuptrainloader1)
+                unsuptrainloader2 = iter(self.unsuptrainloader2)
+                unsup_batch1 = unsuptrainloader1.next()
+                unsup_batch2 = unsuptrainloader2.next()
             
             start_time = time.time()
 
