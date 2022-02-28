@@ -37,4 +37,4 @@ def standard_to_bgr(list_color_name):
         standard.append(from_colorname_to_bgr(list_color_name[i]))
     return standard
 
-color_list = standard_to_bgr(STANDARD_COLORS)
+color_list = [[0.0,0.0,0.0], [0.0,1.0,0.0], [0.0,0.0,1.0]] #standard_to_bgr(STANDARD_COLORS)
