@@ -32,7 +32,7 @@ class TestPipeline(object):
 
         self.debug = opt['global']['debug']
         self.logger = LoggerObserver.getLogger("main") 
-        self.savedir = os.path.join(opt['global']['save_dir'], datetime.now().strftime('%Y-%m-%d_%H-%M-%S'))
+        self.savedir = opt['global']['save_dir']
         os.makedirs(self.savedir, exist_ok=True)
 
         stdout_logger = StdoutLogger(__name__, self.savedir, debug=self.debug)
@@ -84,6 +84,7 @@ class TestPipeline(object):
             self.model2,
             criterion_sup=None, 
             criterion_unsup=None, 
+            soft_cps=True,
             device=self.device)
 
     

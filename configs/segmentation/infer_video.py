@@ -21,6 +21,29 @@ from theseus.utilities.getter import (get_instance, get_instance_recursively)
 
 from theseus.utilities.visualization.visualizer import Visualizer
 
+class VideoWriter:
+    def __init__(self, video_info, saved_path):
+        self.video_info = video_info
+        self.saved_path = saved_path
+
+        if not os.path.exists(self.saved_path):
+            os.makedirs(self.saved_path, exist_ok=True)
+            
+        video_name = self.video_info['name']
+        outpath =os.path.join(self.saved_path, video_name)
+        self.FPS = self.video_info['fps']
+        self.WIDTH = self.video_info['width']
+        self.HEIGHT = self.video_info['height']
+        self.NUM_FRAMES = self.video_info['num_frames']
+        self.outvid = cv2.VideoWriter(
+            outpath,   
+            cv2.VideoWriter_fourcc(*'mp4v'), 
+            self.FPS, 
+            (self.WIDTH, self.HEIGHT))
+
+    def write(self, frame):
+        self.outvid.write(frame)
+
 class TestPipeline(object):
     def __init__(
             self,
@@ -87,11 +110,12 @@ class TestPipeline(object):
         visualizer = Visualizer()
         self.model.eval()
 
-        saved_mask_dir = os.path.join(self.savedir, 'masks')
-        saved_overlay_dir = os.path.join(self.savedir, 'overlays')
+        video_name = os.path.basename(self.dataset.video_path)
+        saved_mask_path = os.path.join(self.savedir, f'{video_name}_masks.mp4')
+        saved_overlay_path = os.path.join(self.savedir, f'{video_name}_overlay.mp4')
 
-        os.makedirs(saved_mask_dir, exist_ok=True)
-        os.makedirs(saved_overlay_dir, exist_ok=True)
+        mask_writer = VideoWriter(self.dataset.video_info, saved_mask_path)
+        overlay_writer = VideoWriter(self.dataset.video_info, saved_overlay_path)
 
         for idx, batch in enumerate(self.dataloader):
             inputs = batch['inputs']
@@ -106,8 +130,7 @@ class TestPipeline(object):
                 resized_decode_mask = cv2.resize(decode_pred, dsize=tuple(ori_size))
 
                 # Save mask
-                savepath = os.path.join(saved_mask_dir, filename)
-                cv2.imwrite(savepath, resized_decode_mask)
+                mask_writer.write(resized_decode_mask)
 
                 # Save overlay
                 raw_image = visualizer.denormalize(input)   
@@ -115,12 +138,10 @@ class TestPipeline(object):
                 ori_image = cv2.resize(raw_image, dsize=tuple(ori_size))
                 ori_image = cv2.cvtColor(ori_image, cv2.COLOR_RGB2BGR)
                 overlay = ori_image * 0.75 + resized_decode_mask * 0.25
-                savepath = os.path.join(saved_overlay_dir, filename)
-                dirname = os.path.dirname(savepath)
-                os.makedirs(dirname, exist_ok=True)
-                cv2.imwrite(savepath, overlay)
+                overlay_writer.write(overlay)
 
-                self.logger.text(f"Save image at {savepath}", level=LoggerObserver.INFO)
+        self.logger.text(f"Save submission video at {saved_mask_path}", level=LoggerObserver.INFO)
+        self.logger.text(f"Save overlay video at {saved_overlay_path}", level=LoggerObserver.INFO)
         
 
 if __name__ == '__main__':

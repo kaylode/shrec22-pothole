@@ -16,9 +16,9 @@ model2:
     encoder_name: efficientnet-b0
 data: 
   dataset:
-    name: ImageDataset
+    name: VideoDataset
     args:
-      image_dir: data/images/
+      video_path: data/video.mp4
       txt_classnames: configs/segmentation/classes.txt
   dataloader:
     name: DataLoaderWithCollator

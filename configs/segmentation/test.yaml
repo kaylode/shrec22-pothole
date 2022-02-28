@@ -1,26 +1,23 @@
 global:
   debug: True
-  cfg_transform: configs/sample/transform.yaml
+  cfg_transform: configs/segmentation/transform.yaml
   save_dir: runs
   device: cuda:0
   weights: null
-  
 model:
-  name: UNetWrapper
+  name: BaseSegModel
   args:
-    name: unet
-    out_ch: 1
-
+    name: unetplusplus
+    encoder_name: efficientnet-b0
 data: 
   dataset:
-    name: TestCSVDataset
+    name: ImageDataset
     args:
       image_dir: data/images
-      txt_classnames: configs/sample/classes.txt
-
+      txt_classnames: configs/segmentation/classes.txt
   dataloader:
     name: DataLoaderWithCollator
     args:
-      batch_size: 64
-      drop_last: True
+      batch_size: 8
+      drop_last: False
       shuffle: True
