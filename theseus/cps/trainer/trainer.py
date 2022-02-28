@@ -147,7 +147,6 @@ class S4Trainer(SemiSupervisedTrainer):
         visualizer = Visualizer()
         batch = next(iter(self.unsuptrainloader1))
         images = batch["inputs"]
-        cutmix_masks = batch["cutmix_masks"]
 
         batch = []
         for idx, inputs in enumerate(images):
@@ -162,31 +161,6 @@ class S4Trainer(SemiSupervisedTrainer):
 
         LOGGER.log([{
             'tag': "Sanitycheck/batch/upsup_train",
-            'value': fig,
-            'type': LoggerObserver.FIGURE,
-            'kwargs': {
-                'step': self.iters
-            }
-        }])
-
-        ## Visualize CutMix
-        batch2 = next(iter(self.unsuptrainloader2))
-        images2 = batch2["inputs"]
-        unsup_imgs_mixed = images * (1 - cutmix_masks) + images2 * cutmix_masks
-
-        batch = []
-        for idx, inputs in enumerate(unsup_imgs_mixed):
-            img_show = visualizer.denormalize(inputs)
-            img_show = TFF.to_tensor(img_show)
-            batch.append(img_show)
-        grid_img = visualizer.make_grid(batch)
-
-        fig = plt.figure(figsize=(16,8))
-        plt.axis('off')
-        plt.imshow(grid_img)
-
-        LOGGER.log([{
-            'tag': "Sanitycheck/batch/cutmix_upsup_train",
             'value': fig,
             'type': LoggerObserver.FIGURE,
             'kwargs': {

@@ -3,11 +3,8 @@ pyyaml>=5.1
 webcolors
 tensorboard
 tqdm
-ensemble-boxes
 timm
 omegaconf
-pycocotools
 gdown==4.3.0
-grad-cam
 tabulate
 segmentation-models-pytorch
