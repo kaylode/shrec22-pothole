@@ -26,23 +26,18 @@ class VideoWriter:
         self.video_info = video_info
         self.saved_path = saved_path
 
-        if not os.path.exists(self.saved_path):
-            os.makedirs(self.saved_path, exist_ok=True)
-            
-        video_name = self.video_info['name']
-        outpath =os.path.join(self.saved_path, video_name)
         self.FPS = self.video_info['fps']
         self.WIDTH = self.video_info['width']
         self.HEIGHT = self.video_info['height']
         self.NUM_FRAMES = self.video_info['num_frames']
         self.outvid = cv2.VideoWriter(
-            outpath,   
-            cv2.VideoWriter_fourcc(*'mp4v'), 
+            self.saved_path,   
+            cv2.VideoWriter_fourcc(*'MJPG'), 
             self.FPS, 
             (self.WIDTH, self.HEIGHT))
 
     def write(self, frame):
-        self.outvid.write(frame)
+        self.outvid.write(frame.astype(np.uint8))
 
 class TestPipeline(object):
     def __init__(
@@ -125,9 +120,10 @@ class TestPipeline(object):
         visualizer = Visualizer()
         self.model.eval()
 
-        video_name = os.path.basename(self.dataset.video_path)
-        saved_mask_path = os.path.join(self.savedir, f'{video_name}_masks.mp4')
-        saved_overlay_path = os.path.join(self.savedir, f'{video_name}_overlay.mp4')
+        video_name, ext = os.path.splitext(os.path.basename(self.dataset.video_path))
+        ext = '.avi'
+        saved_mask_path = os.path.join(self.savedir, f'{video_name}_masks{ext}')
+        saved_overlay_path = os.path.join(self.savedir, f'{video_name}_overlay{ext}')
 
         mask_writer = VideoWriter(self.dataset.video_info, saved_mask_path)
         overlay_writer = VideoWriter(self.dataset.video_info, saved_overlay_path)
