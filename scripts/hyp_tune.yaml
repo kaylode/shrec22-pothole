@@ -1,0 +1,45 @@
+global:
+  debug: True
+  cfg_transform: configs/cps/transform.yaml
+  save_dir: runs
+  device: cuda:0
+  weights: 
+    - null
+    - null
+ensembler:
+  name: SemanticEnsembler
+  args:
+    - weights: [1.0, 1.0]
+    - reduction: sum
+    - models:
+      - name: BaseSegModel
+        args:
+          name: unetplusplus
+          encoder_name: efficientnet-b0
+      - name: BaseSegModel
+        args:
+          name: deeplabv3plus
+          encoder_name: efficientnet-b0
+
+metrics:
+- name: mIOU
+  args:
+    ignore_index: 0
+
+data:
+  dataset:
+    val:
+      name: CSVDataset
+      args:
+        image_dir: /content/main/data/shrec22-pothole/pothole-mix/validation
+        mask_dir: /content/main/data/shrec22-pothole/pothole-mix/validation
+        csv_path: /content/main/data/val.csv
+        txt_classnames: configs/segmentation/classes.txt
+    
+  dataloader:
+    val:
+      name: DataLoaderWithCollator
+      args:
+        batch_size: 8
+        drop_last: false
+        shuffle: true
