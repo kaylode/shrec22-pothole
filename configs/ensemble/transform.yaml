@@ -4,8 +4,8 @@ val:
     transforms:
       - name: AlbResize
         args:
-          width: 640
-          height: 640
+          width: 512
+          height: 512
       - name: AlbNormalize
         args:
           mean: [0.485, 0.456, 0.406]

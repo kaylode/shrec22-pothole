@@ -10,16 +10,16 @@ global:
 ensembler:
   name: SemanticEnsembler
   args:
-    - weights: [1.0, 1.0]
-    - reduction: sum
-    - models:
+    weights: [1.0, 1.0]
+    reduction: sum
+    models:
       - name: BaseSegModel
         args:
-          name: unetplusplus
+          backbone_name: unetplusplus
           encoder_name: efficientnet-b0
       - name: BaseSegModel
         args:
-          name: deeplabv3plus
+          backbone_name: deeplabv3plus
           encoder_name: efficientnet-b0
         
 data: 

@@ -14,15 +14,14 @@ class SemanticEnsembler(nn.Module):
 
     def __init__(
         self, 
-        models: List[torch.nn],
-        device: torch.device,
+        models: List[torch.nn.Module],
         weights: List[float] = None,
         reduction='sum',
         **kwargs):
 
+        models = nn.ModuleList(models)
         super().__init__()
         self.models = models
-        self.device = device
         self.weights = weights
         self.reduction = reduction
 
@@ -36,7 +35,7 @@ class SemanticEnsembler(nn.Module):
                 prob *= weights[i]
             probs.append(prob)
 
-        output = torch.stack(*probs, dim=0) # [N, B, C, H, W]
+        output = torch.stack(probs, dim=0) # [N, B, C, H, W]
 
         if reduction == 'sum':
             output = output.sum(dim=0) #[B, C, H, W]
@@ -59,7 +58,7 @@ class SemanticEnsembler(nn.Module):
             outputs = model(inputs)
             outputs_list.append(outputs)
 
-        probs = self.ensemble_inference(outputs, self.reduction, self.weights)
+        probs = self.ensemble_inference(outputs_list, self.reduction, self.weights)
         predict = torch.argmax(probs, dim=1)
 
         predict = predict.detach().cpu().squeeze().numpy()

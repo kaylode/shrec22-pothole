@@ -7,7 +7,7 @@ global:
 model:
   name: BaseSegModel
   args:
-    name: unetplusplus
+    backbone_name: unetplusplus
     encoder_name: efficientnet-b0
 data: 
   dataset:

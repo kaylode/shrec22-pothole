@@ -10,7 +10,7 @@ Source: https://github.com/qubvel/segmentation_models.pytorch
 class BaseSegModel(nn.Module):
     def __init__(
         self, 
-        name: str, 
+        backbone_name: str, 
         encoder_name : str = "resnet34", 
         num_classes: int = 1000,
         aux_params: Dict = None,
@@ -19,7 +19,7 @@ class BaseSegModel(nn.Module):
 
         self.num_classes = num_classes
         self.model = smp.create_model(
-            arch = name,
+            arch = backbone_name,
             encoder_name = encoder_name,
             in_channels = 3,
             encoder_weights = "imagenet",
