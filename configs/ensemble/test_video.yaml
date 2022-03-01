@@ -1,0 +1,34 @@
+global:
+  debug: True
+  cfg_transform: configs/cps/transform.yaml
+  save_dir: runs
+  device: cuda:0
+  weights: 
+    - null
+    - null
+ensembler:
+  name: SemanticEnsembler
+  args:
+    - weights: [1.0, 1.0]
+    - reduction: sum
+    - models:
+      - name: BaseSegModel
+        args:
+          name: unetplusplus
+          encoder_name: efficientnet-b0
+      - name: BaseSegModel
+        args:
+          name: deeplabv3plus
+          encoder_name: efficientnet-b0
+data: 
+  dataset:
+    name: VideoDataset
+    args:
+      video_path: data/video.mp4
+      txt_classnames: configs/segmentation/classes.txt
+  dataloader:
+    name: DataLoaderWithCollator
+    args:
+      batch_size: 8
+      drop_last: False
+      shuffle: True
