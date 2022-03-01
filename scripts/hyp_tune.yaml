@@ -1,6 +1,6 @@
 global:
   debug: True
-  cfg_transform: configs/cps/transform.yaml
+  cfg_transform: scripts/transform.yaml
   save_dir: runs
   n: 2
   study_name: base
