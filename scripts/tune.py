@@ -34,7 +34,6 @@ class TuningPipeline(object):
     ):
         super(TuningPipeline, self).__init__()
         self.opt = opt
-        self.weights = opts['global']['weights']
         self.numpy_dirs = opt['global']['numpy_dirs']
         self.savedir = opt['global']['save_dir']
         os.makedirs(self.savedir, exist_ok=True)
@@ -93,7 +92,7 @@ class TuningPipeline(object):
         """
         Evaluate the model
         """
-
+        weights = weights.tolist()
         for batch in tqdm(self.val_dataloader):
             img_names = batch['img_names']
 
@@ -130,7 +129,7 @@ class TuningPipeline(object):
         """
         # create a np vector from params
         w = np.array([params[f"w_{i}"] for i in range(NUM_MODELS)])
-        score = self.evaluate(w, weights = self.weights)
+        score = self.evaluate(w)
         return score
 
 
@@ -151,5 +150,5 @@ if __name__ == "__main__":
     study.optimize(val_pipeline.objective, n_trials=100)
 
     print(study.best_params)
-    joblib.dump(study, f"{args.study_name}.pkl")
+    joblib.dump(study, f"{opts['global']['study_name']}.pkl")
 
