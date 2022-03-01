@@ -141,7 +141,7 @@ class VideoDataset(data.Dataset):
         
         self.current_frame_id = idx+1
 
-        width, height = im.shape[1], im.shape[1]
+        width, height = im.shape[1], im.shape[0]
         if self.transform is not None: 
             im = self.transform(image=im)['image']
 
