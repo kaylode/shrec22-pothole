@@ -32,7 +32,7 @@ class VideoWriter:
         self.NUM_FRAMES = self.video_info['num_frames']
         self.outvid = cv2.VideoWriter(
             self.saved_path,   
-            cv2.VideoWriter_fourcc(*'MJPG'), 
+            cv2.VideoWriter_fourcc(*'mp4v'), 
             self.FPS, 
             (self.WIDTH, self.HEIGHT))
 
@@ -121,7 +121,6 @@ class TestPipeline(object):
         self.model.eval()
 
         video_name, ext = os.path.splitext(os.path.basename(self.dataset.video_path))
-        ext = '.avi'
         saved_mask_path = os.path.join(self.savedir, f'{video_name}_masks{ext}')
         saved_overlay_path = os.path.join(self.savedir, f'{video_name}_overlay{ext}')
 
