@@ -1,6 +1,7 @@
 import os
 import parser
 import re
+from tqdm import tqdm
 import subprocess
 from argparse import ArgumentParser
 
@@ -20,6 +21,7 @@ from theseus.opt import Opts
 from theseus.opt import Config
 from theseus.cps.metrics import METRIC_REGISTRY
 from theseus.cps.datasets import DATASET_REGISTRY, DATALOADER_REGISTRY
+from theseus.segmentation.augmentations import TRANSFORM_REGISTRY
 from theseus.utilities.getter import (get_instance, get_instance_recursively)
 from theseus.utilities.loggers import LoggerObserver, TensorboardLogger, StdoutLogger, ImageWriter
 
@@ -32,7 +34,7 @@ class TuningPipeline(object):
     ):
         super(TuningPipeline, self).__init__()
         self.opt = opt
-
+        self.weights = opts['global']['weights']
         self.numpy_dirs = opt['global']['numpy_dirs']
         self.savedir = opt['global']['save_dir']
         os.makedirs(self.savedir, exist_ok=True)
@@ -44,6 +46,10 @@ class TuningPipeline(object):
         self.logger.subscribe(stdout_logger)
         self.logger.text(self.opt, level=LoggerObserver.INFO)
         self.transform_cfg = Config.load_yaml(opt['global']['cfg_transform'])
+
+        self.transform = get_instance_recursively(
+            self.transform_cfg, registry=TRANSFORM_REGISTRY
+        )
 
         self.val_dataset = get_instance_recursively(
             opt['data']["dataset"]['val'],
@@ -67,9 +73,9 @@ class TuningPipeline(object):
 
     def ensemble(self, logit, weights=None, reduction='max'):
         output = torch.softmax(logit, dim=1)# [num_models, C, H, W]
-
         if weights is not None:
-            output = output * weights[:, None]
+            for i in range(len(weights)):
+                output[i, :] = output[i,:] * weights[i]
 
         if reduction == 'sum':
             output = output.sum(dim=0) #[C, H, W]
@@ -88,11 +94,12 @@ class TuningPipeline(object):
         Evaluate the model
         """
 
-        for batch in self.val_dataloader:
+        for batch in tqdm(self.val_dataloader):
             img_names = batch['img_names']
 
             batch_preds = []
-            for i, item in enumerate(batch):
+            batch_size = batch['targets'].shape[0]
+            for i in range(batch_size):
                 filename = hashlib.md5(img_names[i].encode('utf-8')).hexdigest()
 
                 all_embeddings = []
@@ -103,19 +110,18 @@ class TuningPipeline(object):
 
                 ## Stack into tensors
                 all_embeddings = torch.from_numpy(np.stack(all_embeddings, axis=0)) # (num_models, C, H, W)
-
                 ensembled = self.ensemble(all_embeddings, reduction='sum', weights=weights)# (C, H, W)
                 batch_preds.append(ensembled)
 
             batch_preds = torch.stack(batch_preds, dim=0) # (B, C, H, W)
-        
             for metric in self.metrics:
                 metric.update(batch_preds, batch)
 
         metric_dict = {}
         for metric in self.metrics:
             metric_dict.update(metric.value())
-        return metric_dict
+
+        return float(metric_dict['miou'])
 
 
     def optim_function(self, params):
@@ -124,7 +130,7 @@ class TuningPipeline(object):
         """
         # create a np vector from params
         w = np.array([params[f"w_{i}"] for i in range(NUM_MODELS)])
-        score = self.evaluate(w)
+        score = self.evaluate(w, weights = self.weights)
         return score
 
 
@@ -137,16 +143,11 @@ class TuningPipeline(object):
 
 if __name__ == "__main__":
 
-    parser = ArgumentParser()
-    parser.add_argument("--n", type=int, required=True)
-    parser.add_argument("--study-name", type=str, default="base")
-    args = parser.parse_args()
-    config = Config(args.yaml_path)
+    opts = Opts().parse_args()
+    NUM_MODELS = opts['global']['n']
+    study = optuna.create_study(direction="maximize", study_name=opts['global']['study_name'])
 
-    NUM_MODELS = args.n
-    study = optuna.create_study(direction="maximize", study_name=args.study_name)
-
-    val_pipeline = TuningPipeline(config)
+    val_pipeline = TuningPipeline(opts)
     study.optimize(val_pipeline.objective, n_trials=100)
 
     print(study.best_params)

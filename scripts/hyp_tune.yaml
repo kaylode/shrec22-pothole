@@ -2,30 +2,19 @@ global:
   debug: True
   cfg_transform: configs/cps/transform.yaml
   save_dir: runs
-  device: cuda:0
-  weights: 
-    - null
-    - null
-ensembler:
-  name: SemanticEnsembler
-  args:
-    - weights: [1.0, 1.0]
-    - reduction: sum
-    - models:
-      - name: BaseSegModel
-        args:
-          name: unetplusplus
-          encoder_name: efficientnet-b0
-      - name: BaseSegModel
-        args:
-          name: deeplabv3plus
-          encoder_name: efficientnet-b0
-
+  n: 2
+  study_name: base
+  weights: [1.0, 1.0]
+  numpy_dirs:
+    - /content/embeddings/deeplabv3+
+    - /content/embeddings/cps
 metrics:
+- name: DiceScore
+  args:
+    ignore_index: 0
 - name: mIOU
   args:
     ignore_index: 0
-
 data:
   dataset:
     val:
