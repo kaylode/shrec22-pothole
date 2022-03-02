@@ -1,19 +1,13 @@
 # SHREC'22 track: Pothole and crack detection on road pavement using RGB-D images 
 
-## About the challenge
-- See [SHREC22 Overview](./docs/SHREC22.md)
-
-## Method overview
-- See [SUBMISSION.md](./docs/SUBMISSION.md)
-
-## Datasets
-- See [DATA.md](./docs/DATA.md)
-
-## How to train and evalutation
-- See [CODE.md](./docs/CODE.md)
-
-## How to run inference only
-- See [SUBMISSION.md](./docs/SUBMISSION.md)
+## Table of contents
+- [About the challenge](./docs/SHREC22.md)
+- [Our methods](./docs/SUBMISSION.md)
+- [Datasets](./docs/DATA.md)
+- How to run
+      - [Training and evaluation](./docs/CODE.md)
+      - [Inference](./docs/SUBMISSION.md)
+- [Results](./docs/RESULTS.md)
 
 ## Resources
 - Colab notebooks: coming soon
@@ -21,9 +15,21 @@
 ## Code References
 - https://github.com/kaylode/theseus
 - https://github.com/charlesCXK/TorchSemiSeg
+- https://github.com/qubvel/segmentation_models.pytorch
 - https://www.kaggle.com/bigironsphere/loss-function-library-keras-pytorch
 
 ## Paper References
+
+```
+@misc{Yakubovskiy:2019,
+  Author = {Pavel Yakubovskiy},
+  Title = {Segmentation Models Pytorch},
+  Year = {2020},
+  Publisher = {GitHub},
+  Journal = {GitHub repository},
+  Howpublished = {\url{https://github.com/qubvel/segmentation_models.pytorch}}
+}
+```
 ```
 @inproceedings{chen2021-CPS,
   title={Semi-Supervised Semantic Segmentation with Cross Pseudo Supervision},
