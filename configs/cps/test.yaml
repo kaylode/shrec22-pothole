@@ -7,12 +7,12 @@ global:
 model1:
   name: BaseSegModel
   args:
-    name: unetplusplus
+    backbone_name: unetplusplus
     encoder_name: efficientnet-b0
 model2:
   name: BaseSegModel
   args:
-    name: deeplabv3plus
+    backbone_name: deeplabv3plus
     encoder_name: efficientnet-b0
 data: 
   dataset:
