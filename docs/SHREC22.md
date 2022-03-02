@@ -1,5 +1,8 @@
 # SHREC'22 track: Pothole and crack detection on road pavement using RGB-D images 
 
+<p align="center"> <img width="1000" alt="screen" src="./figures/sh22_banner.png"> </p>
+
+
 Website: http://shrec.ge.imati.cnr.it/shrec22_road_pothole_and_crack_reco/index.html
 
 ## Descriptions
@@ -10,13 +13,14 @@ Participants have at their disposal about 4k pairs of images (made of RGB+segmen
 Registration and instructions for competitors
 Each participant is requested to register to the track by sending an email to Elia Moscoso Thompson (email: elia.moscoso@ge.imati.cnr.it) with the subject SHREC'22 track: Pothole and crack detection on road pavement using RGB-D images. Then, an answer will be sent to each participant with further instructions on how to download the models once the constest starts.
 
-## Further information
+## Submission information
 
-To maximize the reproducibility of the experiments, participants are required to share with the organizers the trained models, the source code with which they trained the models, and a portion of standalone code that can be used to perform inference on an image or video.
-## Important dates [UPDATED - Jan 31th 2022]
+To maximize the reproducibility of the experiments, participants are required to share with the organizers the trained models, the source code with which they trained the models, and a portion of standalone code that can be used to perform inference on an image or video. Finally, participants are required to send us a description of their method to include in the contest paper (1-2 images are welcomed).
+
+## Important dates [UPDATED - March 1, 2022]
 
 - February 1, 2022: a set of samples is released.
 - February 14-28, 2022: the dataset is available and the participants start to run their methods.
-- March 1, 2022: the participants submit up to 3 runs to the organizers and send to the organizers a summary of their method(s).
-- March 5, 2022: an abstract of the report is submitted to the participants.
+- March 4, 2022: the participants submit up to 3 runs to the organizers and send to the organizers a summary of their method(s).
+- March 8, 2022: an abstract of the report is submitted to the participants.
 - March 15, 2022: submission of the track full report to the SHREC organizers.

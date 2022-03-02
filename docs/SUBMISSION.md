@@ -7,8 +7,9 @@
 - We conduct many experiment with different augmentation and criterion settings. Finally we highlight some techniques that help us boost up the overall performance of our models. These settings are applied for all the runs we have submitted.
 
 - Highlighted techniques:
-        - Combination of Focal Tversky loss and Cross Entropy with Online Hard Example Mining (OHEM) as our objective function. This combined loss increase the precision and recall rate more than standard Cross Entropy loss.
-        - Mosaic augmentation to blend multiple classes into an image. We observe that the dataset lacks of interaction between cracks and potholes (some images are full of cracks with no pothole or vice versa). This help introduce variety of possible situtations where both cracks and potholes present in the scene, which also help the model generalize better.
+    - Combination of Focal Tversky loss and Cross Entropy with Online Hard Example Mining (OHEM) as our objective function. This combined loss increase the precision and recall rate more than standard Cross Entropy loss.
+
+    - Mosaic augmentation to blend multiple classes into an image. We observe that the dataset lacks of interaction between cracks and potholes (some images are full of cracks with no pothole or vice versa). This help introduce variety of possible situtations where both cracks and potholes present in the scene, which also help the model generalize better.
 
 ## **Run 1: Efficient Unet++**
 - In this run, we simply adapt the traditional Unet++ with some modification. We reuse the pretrained EfficientNets on the ImageNet dataset as the new backbone and train the whole process with fully-annotated labels.
