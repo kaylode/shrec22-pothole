@@ -1,0 +1,23 @@
+global:
+  debug: True
+  cfg_transform: null
+  save_dir: runs
+  device: null
+  weights: null
+model:
+  name: BaseSegModel
+  args:
+    name: unetplusplus
+    encoder_name: efficientnet-b0
+data:
+  dataset:
+    name: VideoDataset
+    args:
+      video_path: null
+      txt_classnames: null
+  dataloader:
+    name: DataLoaderWithCollator
+    args:
+      batch_size: 8
+      drop_last: False
+      shuffle: False
