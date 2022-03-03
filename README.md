@@ -1,4 +1,8 @@
-# SHREC'22 track: Pothole and crack detection on road pavement using RGB-D images 
+# <p align="center"> HCMUS Team at SHREC'22: Pothole and crack detection on road pavement </p>
+
+<p align="center"> <img height="300" alt="screen" src="./docs/figures/overlays.png"> </p>
+
+----------------------------------------------------------
 
 ## Table of contents
 
@@ -10,3 +14,4 @@
   - [Inference](./docs/INFERENCE.md)
 - [Results](./docs/RESULTS.md)
 - [References](./docs/REFERENCES.md)
+
