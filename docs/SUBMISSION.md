@@ -14,7 +14,7 @@
 
     - Mosaic augmentation to blend multiple images into a single one. We observe that the dataset lacks of interaction between cracks and potholes (some images are full of cracks with no pothole or vice versa). This help introduce variety of possible situtations where both cracks and potholes present in the same scene, which also help the model generalize better.
 
-    <p align="center"> <img height="250" alt="screen" src="./figures/mosaic.png"> <br> <strong>Mosaic augmenation merges 4 input images into one</strong></p>
+    <p align="center"> <img height="250" alt="screen" src="./figures/mosaic.png"> <br> <strong>Mosaic augmentation merges 4 input images into one</strong></p>
 
 ## **Run 1: Efficient DeepLabV3+**
 - In this run, we simply adapt the traditional DeepLabV3+ with some modification. We reuse the pretrained EfficientNets on the ImageNet dataset as the new backbone and train the whole process with fully-annotated labels.
@@ -29,9 +29,17 @@
 | :----------------------------------------------------------: | :----------------------------------------------------------: | 
 | <img height="150" alt="screen" src="./figures/supervised.png">  | <img height="150" alt="screen" src="./figures/unsupervised.png">  | 
 
-## References
+- Notation explanation: 
+    - X<sup>L</sup>, X<sup>U+L</sup>: labelled inputs, unlabelled and labelled inputs respectively
+    - Y<sup>L</sup> : grouth truth segmentation mask
+    - Y<sub>S</sub> : soft pseudo segmentation mask
+    - P:            probability maps outputed from networks
+    - (&#8212;>):   forward
+    - (//) :        stop-gradient
+    - (-->):        foss supervision
+    - (-&#8901;>):  masked loss supervision
 
-<details close> <summary><strong>Show more</strong></summary>
+## References
 
 ``` bibtex
 @incollection{zhou2018unet++,
@@ -91,4 +99,3 @@
   year={2021}
 }
 ```
-</details>
