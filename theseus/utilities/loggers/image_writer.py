@@ -1,12 +1,12 @@
 import os
 from .subscriber import LoggerSubscriber
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 
 
 class ImageWriter(LoggerSubscriber):
-    """Logger for writing images
-    
-    """
+    """Logger for writing images"""
+
     def __init__(self, savedir) -> None:
         self.savedir = savedir
 

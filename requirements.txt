@@ -4,6 +4,7 @@ webcolors
 tensorboard
 tqdm
 timm
+matplotlib
 omegaconf
 gdown==4.3.0
 tabulate
