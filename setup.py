@@ -9,7 +9,7 @@ setuptools.setup(
         "numpy",
         "torch",
         "tensorboard",
-        "albumentations==0.1.12",
+        "albumentations==1.1.0",
         "torchvision",
         "tqdm",
         "timm",
