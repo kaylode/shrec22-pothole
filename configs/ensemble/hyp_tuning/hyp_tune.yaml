@@ -1,0 +1,34 @@
+global:
+  debug: True
+  cfg_transform: scripts/transform.yaml
+  save_dir: runs
+  n: 2
+  study_name: base
+  weights: [1.0, 1.0]
+  numpy_dirs:
+    - /content/embeddings/deeplabv3+
+    - /content/embeddings/cps
+metrics:
+- name: DiceScore
+  args:
+    ignore_index: 0
+- name: mIOU
+  args:
+    ignore_index: 0
+data:
+  dataset:
+    val:
+      name: CSVDataset
+      args:
+        image_dir: /content/main/data/shrec22-pothole/pothole-mix/validation
+        mask_dir: /content/main/data/shrec22-pothole/pothole-mix/validation
+        csv_path: /content/main/data/val.csv
+        txt_classnames: configs/segmentation/classes.txt
+    
+  dataloader:
+    val:
+      name: DataLoaderWithCollator
+      args:
+        batch_size: 8
+        drop_last: false
+        shuffle: true

@@ -13,6 +13,7 @@ setuptools.setup(
         "torchvision",
         "tqdm",
         "timm",
+        "matplotlib"
         "pyyaml>=5.1",
         "webcolors",
         "omegaconf",
