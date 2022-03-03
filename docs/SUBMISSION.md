@@ -9,19 +9,36 @@
 - Highlighted techniques:
     - Combination of Focal Tversky loss and Cross Entropy with Online Hard Example Mining (OHEM) as our objective function. This combined loss increase the precision and recall rate more than standard Cross Entropy loss.
 
-    - Mosaic augmentation to blend multiple classes into an image. We observe that the dataset lacks of interaction between cracks and potholes (some images are full of cracks with no pothole or vice versa). This help introduce variety of possible situtations where both cracks and potholes present in the scene, which also help the model generalize better.
+    <p align="center"> <img height="50" alt="screen" src="./figures/tversky.png"> <img height="50" alt="screen" src="./figures/focal_tversky.png"> <br> <strong>Focal Tversky loss</strong> </p>
 
-## **Run 1: Efficient Unet++**
-- In this run, we simply adapt the traditional Unet++ with some modification. We reuse the pretrained EfficientNets on the ImageNet dataset as the new backbone and train the whole process with fully-annotated labels.
 
+    - Mosaic augmentation to blend multiple images into a single one. We observe that the dataset lacks of interaction between cracks and potholes (some images are full of cracks with no pothole or vice versa). This help introduce variety of possible situtations where both cracks and potholes present in the same scene, which also help the model generalize better.
+
+    <p align="center"> <img height="250" alt="screen" src="./figures/mosaic.png"> <br> <strong>Mosaic augmenation merges 4 input images into one</strong></p>
+
+## **Run 1: Efficient DeepLabV3+**
+- In this run, we simply adapt the traditional DeepLabV3+ with some modification. We reuse the pretrained EfficientNets on the ImageNet dataset as the new backbone and train the whole process with fully-annotated labels.
 
 ## **Run 2: Masked Soft Cross Pseudo Supervision**
-- In this run, we observe that while run 1 gives overall good metric scores on the validation set, it performs worse when comes to out-of-distribution samples, such as frames from rgbd videos. We alleviate this by strengthening the model with unsupervised data or rather data "in the wild". We inherit ideas from the recent SOTA semi-supervised method: Cross Pseudo Supervision and apply with some critical improvements. Instead of using hardcoded pseudo labels, we soften them with softmax normalization and mask out the background channel, hence the name "Masked Soft CPS". The reason behind this will be discussed in the working note later. 
+- In this run, we observe that while run 1 gives overall good metric scores on the validation set, it performs worse when comes to out-of-distribution samples, such as frames from rgbd videos. We alleviate this by strengthening the model with unsupervised data or rather data "in the wild". We inherit ideas from the recent SOTA semi-supervised method: Cross Pseudo Supervision (CPS) and apply with some critical improvements. Instead of using hardcoded pseudo labels, we soften them with softmax normalization and mask out the background channel, hence the name "Masked Soft CPS". The reason behind this will be discussed in the working note later. 
 
-## **Run 3: Ensemble of models**
-- In this run, we perform ensemble strategy to combine predictions from multiple models. This helps stablize and consolidate the masks prediction.  
+- CPS works by combining both the annotated and non-annotated data and train two neural networks simultaneously. For the annotated samples, supervision loss is applied typically. For the non-annotated, the outputs from one model become the other's targets and are judged also by the supervision loss. The figures bellow illustrate the training pipeline. 
+
+<div style="display: flex; justify-content: center;">
+  <div style="display:inline;"> 
+    <img height="150" alt="screen" src="./figures/supervised.png">  <br> 
+    <p align="center"><strong>Supervised branch</strong> </p>
+  </div> 
+  &emsp;
+  <div style="display:inline"> 
+    <img height="150" alt="screen" src="./figures/unsupervised.png"> <br> 
+    <p align="center"><strong>Unsupervised branch</strong> </p>
+  </div> 
+</div> 
 
 ## References
+
+<details close> <summary><strong>Show more</strong></summary>
 
 ```
 @incollection{zhou2018unet++,
@@ -35,13 +52,33 @@
 ```
 
 ```
-@misc{abraham2018novel,
-      title={A Novel Focal Tversky loss function with improved Attention U-Net for lesion segmentation}, 
-      author={Nabila Abraham and Naimul Mefraz Khan},
-      year={2018},
-      eprint={1810.07842},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@inproceedings{chen2018encoder,
+  title={Encoder-decoder with atrous separable convolution for semantic image segmentation},
+  author={Chen, Liang-Chieh and Zhu, Yukun and Papandreou, George and Schroff, Florian and Adam, Hartwig},
+  booktitle={Proceedings of the European conference on computer vision (ECCV)},
+  pages={801--818},
+  year={2018}
+}
+```
+
+```
+@article{xie2021segformer,
+  title={SegFormer: Simple and efficient design for semantic segmentation with transformers},
+  author={Xie, Enze and Wang, Wenhai and Yu, Zhiding and Anandkumar, Anima and Alvarez, Jose M and Luo, Ping},
+  journal={Advances in Neural Information Processing Systems},
+  volume={34},
+  year={2021}
+}
+```
+
+```
+@inproceedings{abraham2019novel,
+  title={A novel focal tversky loss function with improved attention u-net for lesion segmentation},
+  author={Abraham, Nabila and Khan, Naimul Mefraz},
+  booktitle={2019 IEEE 16th international symposium on biomedical imaging (ISBI 2019)},
+  pages={683--687},
+  year={2019},
+  organization={IEEE}
 }
 ```
 
@@ -54,12 +91,11 @@
 }
 ```
 ```
-@misc{filipiak2022ncps,
-      title={n-CPS: Generalising Cross Pseudo Supervision to n Networks for Semi-Supervised Semantic Segmentation}, 
-      author={Dominik Filipiak and Piotr Tempczyk and Marek Cygan},
-      year={2022},
-      eprint={2112.07528},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@article{filipiak2021n,
+  title={$ n $-CPS: Generalising Cross Pseudo Supervision to $ n $ networks for Semi-Supervised Semantic Segmentation},
+  author={Filipiak, Dominik and Tempczyk, Piotr and Cygan, Marek},
+  journal={arXiv preprint arXiv:2112.07528},
+  year={2021}
 }
 ```
+</details>

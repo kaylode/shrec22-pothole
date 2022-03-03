@@ -5,44 +5,41 @@
 ## Preparation
 - Install the requirements using `pip install -e .` in the root folder
 
-- Download the checkpoints and yaml config files and extract to the root folder. In each of these extracted folder, there will be 4 files `best.pth`, `test.yaml`, `test_video.yaml`, `transform.yaml`. Except for `3.ensembles` folder which doesn't have separate `.pth` file.
+- Download the checkpoints and yaml config files from [Google Drive](https://drive.google.com/file/d/1lfUSbpT4NKaH07gyWrwfMT3o1_R-Xkto/view?usp=sharing) and extract to the root folder. In each of these extracted folder, there will be 4 files `best.pth`, `test.yaml`, `test_video.yaml`, `transform.yaml`.
 
 - The project structure should be as follow:
 ```
 root
 └───ckpt
-│   └───1.unetplusplus-tversky
+│   └───1.deeplabv3plus
 │   │   best.pth
 │   │   test.yaml
 │   │   test_video.yaml
 │   │   transform.yaml
-│   └───2.maskedsoftcps-doubleunets
-│   │   ....
-│   └───3.ensembles
+│   └───2.maskedsoftcps-dlunet
 │   │   ....
 │   │
 └───configs  
 │   └───segmentation
 │   └───cps
-│   └───ensemble
 |   ...
 ```
 
 - After the execution is finished, the results will be saved into `outputs` folder
 
-## **Run 1: Efficient Unet++**
+## **Run 1: Efficient DeeplabV3+**
 
 - On images
 ``` bash
 python configs/segmentation/infer.py \
-        -c ckpt/1.unetplusplus-tversky/test.yaml \
+        -c ckpt/1.deeplabv3plus/test.yaml \
         -o data.dataset.args.image_dir=$IMAGE_DIR
 ```
 
 - On single video
 ``` bash
 python configs/segmentation/infer_video.py \
-        -c ckpt/1.unetplusplus-tversky/test_video.yaml \
+        -c ckpt/1.deeplabv3plus/test_video.yaml \
         -o data.dataset.args.video_path=$VIDEO_PATH
 ```
 
@@ -51,30 +48,14 @@ python configs/segmentation/infer_video.py \
 - On images
 ``` bash
 python configs/cps/infer.py \
-        -c ckpt/2.maskedsoftcps-doubleunets/test.yaml \
+        -c ckpt/2.maskedsoftcps-dlunet/test.yaml \
         -o data.dataset.args.image_dir=$IMAGE_DIR
 ```
 
 - On single video
 ``` bash
 python configs/cps/infer_video.py \
-        -c ckpt/2.maskedsoftcps-doubleunets/test_video.yaml \
-        -o data.dataset.args.video_path=$VIDEO_PATH
-```
-
-## **Run 3: Ensemble of models**
-
-- On images
-``` bash
-python configs/ensemble/infer.py \
-        -c ckpt/3.ensembles/test.yaml \
-        -o data.dataset.args.image_dir=$IMAGE_DIR
-```
-
-- On single video
-``` bash
-python configs/ensemble/infer_video.py \
-        -c ckpt/3.ensembles/test_video.yaml \
+        -c ckpt/2.maskedsoftcps-dlunet/test_video.yaml \
         -o data.dataset.args.video_path=$VIDEO_PATH
 ```
 
