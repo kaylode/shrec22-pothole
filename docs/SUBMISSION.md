@@ -22,25 +22,18 @@
 ## **Run 2: Masked Soft Cross Pseudo Supervision**
 - In this run, we observe that while run 1 gives overall good metric scores on the validation set, it performs worse when comes to out-of-distribution samples, such as frames from rgbd videos. We alleviate this by strengthening the model with unsupervised data or rather data "in the wild". We inherit ideas from the recent SOTA semi-supervised method: Cross Pseudo Supervision (CPS) and apply with some critical improvements. Instead of using hardcoded pseudo labels, we soften them with softmax normalization and mask out the background channel, hence the name "Masked Soft CPS". The reason behind this will be discussed in the working note later. 
 
-- CPS works by combining both the annotated and non-annotated data and train two neural networks simultaneously. For the annotated samples, supervision loss is applied typically. For the non-annotated, the outputs from one model become the other's targets and are judged also by the supervision loss. The figures bellow illustrate the training pipeline. 
+- CPS works by combining both the annotated and non-annotated data and train two neural networks simultaneously (DeepLabV3+ and Unet++ in our experiment). For the annotated samples, supervision loss is applied typically. For the non-annotated, the outputs from one model become the other's targets and are judged also by the supervision loss. The figures bellow illustrate the training pipeline. 
 
-<div style="display: flex; justify-content: center;">
-  <div style="display:inline;"> 
-    <img height="150" alt="screen" src="./figures/supervised.png">  <br> 
-    <p align="center"><strong>Supervised branch</strong> </p>
-  </div> 
-  &emsp;
-  <div style="display:inline"> 
-    <img height="150" alt="screen" src="./figures/unsupervised.png"> <br> 
-    <p align="center"><strong>Unsupervised branch</strong> </p>
-  </div> 
-</div> 
+
+|  Supervised branch | Unsupervised branch |
+| :----------------------------------------------------------: | :----------------------------------------------------------: | 
+| <img height="150" alt="screen" src="./figures/supervised.png">  | <img height="150" alt="screen" src="./figures/unsupervised.png">  | 
 
 ## References
 
 <details close> <summary><strong>Show more</strong></summary>
 
-```
+``` bibtex
 @incollection{zhou2018unet++,
   title={Unet++: A nested u-net architecture for medical image segmentation},
   author={Zhou, Zongwei and Rahman Siddiquee, Md Mahfuzur and Tajbakhsh, Nima and Liang, Jianming},
@@ -51,7 +44,7 @@
 }
 ```
 
-```
+``` bibtex
 @inproceedings{chen2018encoder,
   title={Encoder-decoder with atrous separable convolution for semantic image segmentation},
   author={Chen, Liang-Chieh and Zhu, Yukun and Papandreou, George and Schroff, Florian and Adam, Hartwig},
@@ -61,7 +54,7 @@
 }
 ```
 
-```
+``` bibtex
 @article{xie2021segformer,
   title={SegFormer: Simple and efficient design for semantic segmentation with transformers},
   author={Xie, Enze and Wang, Wenhai and Yu, Zhiding and Anandkumar, Anima and Alvarez, Jose M and Luo, Ping},
@@ -71,7 +64,7 @@
 }
 ```
 
-```
+``` bibtex
 @inproceedings{abraham2019novel,
   title={A novel focal tversky loss function with improved attention u-net for lesion segmentation},
   author={Abraham, Nabila and Khan, Naimul Mefraz},
@@ -82,7 +75,7 @@
 }
 ```
 
-```
+``` bibtex
 @inproceedings{chen2021-CPS,
   title={Semi-Supervised Semantic Segmentation with Cross Pseudo Supervision},
   author={Chen, Xiaokang and Yuan, Yuhui and Zeng, Gang and Wang, Jingdong},
@@ -90,7 +83,7 @@
   year={2021}
 }
 ```
-```
+``` bibtex
 @article{filipiak2021n,
   title={$ n $-CPS: Generalising Cross Pseudo Supervision to $ n $ networks for Semi-Supervised Semantic Segmentation},
   author={Filipiak, Dominik and Tempczyk, Piotr and Cygan, Marek},
