@@ -16,6 +16,9 @@
 
     <p align="center"> <img height="250" alt="screen" src="./figures/mosaic.png"> <br> <strong>Mosaic augmentation merges 4 input images into one</strong></p>
 
+## **Run 0: SegFormer**
+- In this run, we finetune one of the most recent SOTA method for baseline submission: SegFormer pretrained on ADE20K dataset.  
+
 ## **Run 1: Efficient DeepLabV3+**
 - In this run, we simply adapt the traditional DeepLabV3+ with some modification. We reuse the pretrained EfficientNets on the ImageNet dataset as the new backbone and train the whole process with fully-annotated labels.
 
