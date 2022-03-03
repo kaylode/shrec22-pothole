@@ -43,3 +43,6 @@ python  configs/cps/eval.py \
         -o global.save_dir=runs \
         global.pretrained=<path to checkpoint>
 ```
+
+## Resources
+- Training and evaluation notebook: coming soon
