@@ -1,6 +1,6 @@
 # <p align="center"> HCMUS Team at SHREC'22: Pothole and crack detection on road pavement </p>
 
-<p align="center"> <img height="300" alt="screen" src="./docs/figures/overlays.png"> </p>
+<p align="center"> <img height="300" alt="screen" src="./docs/figures/overlays.png"> <br> <i>Predictions of Masked Soft CPS on unseen data "in the wild"</i></p>
 
 ----------------------------------------------------------
 
